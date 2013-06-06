@@ -55,7 +55,26 @@ def getmonth(envecka):
     if month != month2:
         month = month + " / " + month2
     return str(month)
-
+    
+def holliday(dagar):
+    if str(dagar[3]) == "lördag" or str(dagar[3]) == "söndag":
+        return True
+    else:
+        idag = str(dagar[2]) + " " + str(dagar[0])
+        f = open("holliday.txt", "r")
+        for line in f:
+            if idag == line.rstrip():
+                return True
+                
+def notat(dagar):
+    notat = ""
+    idag = str(dagar[2]) + " " + str(dagar[0])
+    f = open("notat.txt", "r")
+    for line in f:
+        line = line.split(": ")
+        if idag == line[0]:
+            notat = line[1]
+    return notat  
 
 def buildspreads():
     latex = ""
@@ -67,14 +86,19 @@ def buildspreads():
         versomonth = getmonth(envecka[0:2])
         rectomonth = getmonth(envecka[3:6])
         
-        for dagar in envecka:  
+        for dagar in envecka:
+            notattext = notat(dagar)
             if n < 3: # måndag -- onsdag
                 if n == 0:
                     latex = latex + "\\Large\\ttfamily " + versomonth + " \\hfill \\normalfont\\small vecka " + getvecka(dagar) + "\n\n"
                     latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.5pt}\\vspace{-2mm}\n\n"
                     latex = latex + "\\normalsize Denna vecka\n\n"
                     latex = latex + "\\vspace{29mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
-                latex = latex + "\\large\\ttfamily \\circled{" + str(dagar[2]) + "} \\hspace{0.2mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"    
+                if notattext != "":
+                    latex = latex + "\\large\\ttfamily \\circled{" + str(dagar[2]) + "} \\hspace{0.2mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill " +  str(notattext) + "\n\n"
+                else:
+                    latex = latex + "\\large\\ttfamily \\circled{" + str(dagar[2]) + "} \\hspace{0.2mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
+                
                 if n < 2:
                     latex = latex + "\\vspace{29mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 2:
@@ -83,10 +107,16 @@ def buildspreads():
                 if n == 3:
                     latex = latex + "\\hfill \\Large\\ttfamily " + rectomonth + " \\normalfont\\normalsize\n\n"
                     latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.5pt}\\vspace{-2mm}\n\n"
-                if str(dagar[3]) == "lördag" or str(dagar[3]) == "söndag":
-                    latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
+                if holliday(dagar):
+                    if notattext != "":
+                        latex = latex + str(notattext) + "\\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
+                    else:
+                        latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
                 else:
-                    latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circled{" + str(dagar[2]) + "} \\normalfont\\normalsize\n\n"
+                    if notattext != "":
+                        latex = latex + str(notattext) + "\\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circled{" + str(dagar[2]) + "} \\normalfont\\normalsize\n\n"
+                    else:
+                        latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circled{" + str(dagar[2]) + "} \\normalfont\\normalsize\n\n"
                 if n < 6:
                     latex = latex + "\\vspace{29mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 6:
