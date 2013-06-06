@@ -1,0 +1,76 @@
+\documentclass[11pt,titlepage]{article}
+\usepackage[swedish]{babel}
+\usepackage{fontspec}
+\usepackage{graphicx}
+\usepackage{parskip}
+\usepackage{tikz}
+\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}
+\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}
+
+\defaultfontfeatures{Mapping=tex-text}
+\setromanfont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro Light}
+\setmonofont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro}
+
+\geometry{
+paperwidth=95mm,
+paperheight=171mm,
+margin=5mm,
+bottom=0mm,
+top=3mm,
+left=9mm,
+nohead
+}
+
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{\node[shape=circle,draw,inner sep=1pt,minimum height=5mm,minimum width=5mm, line width=0.1pt] (char) {#1};}}
+
+\newcommand*\circledfill[1]{\tikz[baseline=(char.base)]{\node[shape=circle,draw,inner sep=0.1pt,minimum height=5mm,minimum width=5mm, , line width=0.1pt, fill=black] (char) {#1};}}
+
+\linespread{1.2}
+
+\begin{document}
+	
+\title{Kalender för 2014}
+\author{\emph{av} Joakim Hertze}
+\maketitle
+	
+\pagebreak
+
+\Large\ttfamily Månad \hfill \normalfont\small vecka 22 
+
+\vspace{-4mm}\rule{\textwidth}{0.5pt}
+
+\normalsize Denna vecka
+
+\vspace{25mm}\rule{\textwidth}{0.1pt}
+
+\large \ttfamily \circled{12} \hspace{0.2mm} \normalfont\normalsize måndag
+
+\vspace{25mm}\rule{\textwidth}{0.1pt}
+
+\large \ttfamily \circled{13} \hspace{0.2mm} \normalfont\normalsize tisdag \hfill \small En bemärkelsedag
+
+\vspace{25mm}\rule{\textwidth}{0.1pt}
+
+\large \ttfamily \circled{14} \hspace{0.2mm} \normalfont\normalsize onsdag
+
+\pagebreak
+
+\hfill \Large\ttfamily Månad \normalfont\normalsize
+
+\vspace{-4mm}\rule{\textwidth}{0.5pt}
+
+\hfill torsdag \hspace{0.2mm} \large \ttfamily \circled{15} \normalfont\normalsize
+
+\vspace{25mm}\rule{\textwidth}{0.1pt}
+
+\hfill fredag \hspace{0.2mm} \large \ttfamily \circled{31} \normalfont\normalsize
+
+\vspace{25mm}\hfill\rule{\textwidth}{0.1pt}
+ 
+\hfill lördag \hspace{0.2mm} \large \ttfamily \circledfill{\bfseries\textcolor{white}{17}} \normalfont\normalsize
+
+\vspace{25mm}\rule{\textwidth}{0.1pt}
+
+\hfill söndag \hspace{0.2mm} \large \ttfamily \circledfill{\bfseries\textcolor{white}{3}} \normalfont\normalsize
+
+\end{document}
