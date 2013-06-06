@@ -10,11 +10,17 @@ year = int(input("Villket år? "))
 if language == "en":
     dayname = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
     monthname = ["January","February","Mars","April","May","June","July","August","September","October","November","December"]
-    thisweek = "This week"
+    thisweek = "this week"
+    currweek = "week"
+    av = "by"
+    titel = "in Filofax Personal Size"
 else:
     dayname = ["måndag","tisdag","onsdag","torsdag","fredag","lördag","söndag"]
     monthname = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"]
-    thisweek = "Denna vecka"
+    thisweek = "denna vecka"
+    currweek = "vecka"
+    av = "av"
+    titel = "för Filofax Personal"
 
 # Funktioner #
 
@@ -100,7 +106,7 @@ def buildspreads():
             notattext = notat(dagar)
             if n < 3: # måndag -- onsdag
                 if n == 0:
-                    latex = latex + "\\Large\\ttfamily " + versomonth + " " + str(year) + " \\hfill \\normalfont\\small vecka " + getvecka(dagar) + "\n\n"
+                    latex = latex + "\\Large\\ttfamily " + versomonth + " " + str(year) + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
                     latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.5pt}\\vspace{-2mm}\n\n"
                     latex = latex + "\\normalsize " + thisweek + "\n\n"
                     latex = latex + "\\vspace{28.5mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
@@ -138,7 +144,10 @@ def buildspreads():
 def preamble():
     latex = ""
     latex = latex + "\documentclass[11pt,titlepage]{article}\n"
-    latex = latex + "\\usepackage[swedish]{babel}\n"
+    if language == "en":
+        latex = latex + "\\usepackage[english]{babel}\n"
+    else:
+        latex = latex + "\\usepackage[swedish]{babel}\n"
     latex = latex + "\\usepackage{fontspec}\n"
     latex = latex + "\\usepackage{graphicx}\n"
     latex = latex + "\\usepackage{parskip}\n"
@@ -148,6 +157,7 @@ def preamble():
     latex = latex + "\\defaultfontfeatures{Mapping=tex-text}\n"
     latex = latex + "\\setromanfont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro Light}\n"
     latex = latex + "\\setmonofont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro}\n\n"
+    latex = latex + "\\setsansfont[Ligatures={Common}, Numbers={OldStyle}, Scale=2.81]{Adobe Jenson Pro Light}\n\n"
     latex = latex + "\geometry{paperwidth=95mm, paperheight=171mm, margin=5mm, bottom=0mm, top=3mm, left=11mm, nohead}\n\n"
     latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4mm,minimum width=4mm, line width=0.1pt] (char) {#1};}}\n\n"
     latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.5mm,minimum width=4.5mm, , line width=0.1pt, fill=black] (char) {#1};}}\n\n"
@@ -156,7 +166,7 @@ def preamble():
 def opening():
     latex = ""
     latex = latex + "\\begin{document}\n\n"
-    latex = latex + "\\title{Kalender för " + str(year) + "}\n\\author{\\emph{av} Joakim Hertze}\n\\maketitle\n\n\\pagebreak\n\n"
+    latex = latex + "\\title{\\sffamily " + str(year) + "\\\ \\vspace{0.25em} \\normalfont " + titel + "}\n\\author{\\emph{" + av + "} Joakim Hertze}\n\\maketitle\n\n\\pagebreak\n\n"
     return latex
     
 def closing():
