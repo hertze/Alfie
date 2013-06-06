@@ -71,24 +71,24 @@ def buildspreads():
             if n < 3: # måndag -- onsdag
                 if n == 0:
                     latex = latex + "\\Large\\ttfamily " + versomonth + " \\hfill \\normalfont\\small vecka " + getvecka(dagar) + "\n\n"
-                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.5pt}\n\n"
+                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.5pt}\\vspace{-2mm}\n\n"
                     latex = latex + "\\normalsize Denna vecka\n\n"
-                    latex = latex + "\\vspace{25mm}\\rule{\\textwidth}{0.1pt}\n\n"
+                    latex = latex + "\\vspace{29mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 latex = latex + "\\large\\ttfamily \\circled{" + str(dagar[2]) + "} \\hspace{0.2mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"    
                 if n < 2:
-                    latex = latex + "\\vspace{25mm}\\rule{\\textwidth}{0.1pt}\n\n"
+                    latex = latex + "\\vspace{29mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 2:
                     latex = latex + "\\pagebreak\n\n"            
             else:
                 if n == 3:
                     latex = latex + "\\hfill \\Large\\ttfamily " + rectomonth + " \\normalfont\\normalsize\n\n"
-                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.5pt}\n\n"
+                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.5pt}\\vspace{-2mm}\n\n"
                 if str(dagar[3]) == "lördag" or str(dagar[3]) == "söndag":
                     latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
                 else:
                     latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circled{" + str(dagar[2]) + "} \\normalfont\\normalsize\n\n"
                 if n < 6:
-                    latex = latex + "\\vspace{25mm}\\rule{\\textwidth}{0.1pt}\n\n"
+                    latex = latex + "\\vspace{29mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 6:
                     latex = latex + "\\pagebreak\n\n"  
             n = n + 1
@@ -101,9 +101,8 @@ def preamble():
     latex = latex + "\\usepackage[swedish]{babel}\n"
     latex = latex + "\\usepackage{fontspec}\n\\usepackage{graphicx}\n\\usepackage{parskip}\n\\usepackage{tikz} \\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}\n\\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}\n\defaultfontfeatures{Mapping=tex-text}\n\setromanfont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro Light}\n\setmonofont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro}\n\n"
     latex = latex + "\geometry{paperwidth=95mm, paperheight=171mm, margin=5mm, bottom=0mm, top=3mm, left=9mm, nohead}\n\n"
-    latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=5mm,minimum width=5mm, line width=0.1pt] (char) {#1};}}\n\n"
-    latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=5mm,minimum width=5mm, , line width=0.1pt, fill=black] (char) {#1};}}\n\n"
-    latex = latex + "\linespread{1.2}\n\n"
+    latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4mm,minimum width=4mm, line width=0.1pt] (char) {#1};}}\n\n"
+    latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.5mm,minimum width=4.5mm, , line width=0.1pt, fill=black] (char) {#1};}}\n\n"
     return latex
 
 def opening():
