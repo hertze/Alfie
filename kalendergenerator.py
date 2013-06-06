@@ -3,9 +3,8 @@
 import calendar
 import datetime
 
-
-language = input("Vilket språk (sv/en)? ")
-year = int(input("Villket år? "))
+language = input("What language (sv/en)? ")
+year = int(input("What year (YYYY)? "))
 
 if language == "en":
     dayname = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
@@ -72,12 +71,12 @@ def getmonth(envecka):
         month = month + "--" + month2
     return str(month)
     
-def holliday(dagar):
+def holiday(dagar):
     if str(dagar[3]) == "lördag" or str(dagar[3]) == "söndag":
         return True
     else:
         idag = str(dagar[2]) + " " + str(dagar[0])
-        f = open("holliday.txt", "r")
+        f = open("holiday-" + str(year) + ".txt", "r")
         for line in f:
             if idag == line.rstrip():
                 return True
@@ -85,7 +84,7 @@ def holliday(dagar):
 def notat(dagar):
     notat = ""
     idag = str(dagar[2]) + " " + str(dagar[0])
-    f = open("notat.txt", "r")
+    f = open("notat-" + str(year) + ".txt", "r")
     for line in f:
         line = line.split(": ")
         if idag == line[0]:
@@ -123,7 +122,7 @@ def buildspreads():
                 if n == 3:
                     latex = latex + "\\hfill \\Large\\ttfamily " + rectomonth + " " + str(year) + " \\normalfont\\normalsize\n\n"
                     latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.5pt}\\vspace{-2mm}\n\n"
-                if holliday(dagar):
+                if holiday(dagar):
                     if notattext != "":
                         latex = latex + "\\mbox{\\small " + str(notattext) + "} \\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
                     else:
@@ -140,7 +139,6 @@ def buildspreads():
             n = n + 1
     return latex
     
-
 def preamble():
     latex = ""
     latex = latex + "\documentclass[11pt,titlepage]{article}\n"
