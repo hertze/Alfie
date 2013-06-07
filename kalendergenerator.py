@@ -106,7 +106,7 @@ def buildspreads():
             if n < 3: # måndag -- onsdag
                 if n == 0:
                     latex = latex + "\\Large\\ttfamily " + versomonth + " " + str(year) + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
-                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.5pt}\\vspace{-2mm}\n\n"
+                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                     latex = latex + "\\normalsize " + thisweek + "\n\n"
                     latex = latex + "\\vspace{28.5mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if notattext != "":
@@ -121,7 +121,7 @@ def buildspreads():
             else:
                 if n == 3:
                     latex = latex + "\\hfill \\Large\\ttfamily " + rectomonth + " " + str(year) + " \\normalfont\\normalsize\n\n"
-                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.5pt}\\vspace{-2mm}\n\n"
+                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                 if holiday(dagar):
                     if notattext != "":
                         latex = latex + "\\mbox{\\small " + str(notattext) + "} \\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
@@ -155,8 +155,8 @@ def preamble():
     latex = latex + "\\defaultfontfeatures{Mapping=tex-text}\n"
     latex = latex + "\\setromanfont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro Light}\n"
     latex = latex + "\\setmonofont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro}\n\n"
-    latex = latex + "\\setsansfont[Ligatures={Common}, Numbers={OldStyle}, Scale=2.81]{Adobe Jenson Pro Light}\n\n"
-    latex = latex + "\geometry{paperwidth=95mm, paperheight=171mm, margin=5mm, bottom=0mm, top=3mm, left=11mm, nohead}\n\n"
+    latex = latex + "\\setsansfont[Ligatures={Common}, Numbers={OldStyle}, Scale=2.81]{Adobe Caslon Pro}\n\n"
+    latex = latex + "\geometry{paperwidth=96mm, paperheight=172mm, margin=5.5mm, bottom=0mm, top=3.5mm, left=11.5mm, nohead}\n\n"
     latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4mm,minimum width=4mm, line width=0.1pt] (char) {#1};}}\n\n"
     latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.5mm,minimum width=4.5mm, , line width=0.1pt, fill=black] (char) {#1};}}\n\n"
     return latex
@@ -180,7 +180,7 @@ latex = preamble() + opening() + buildspreads() + closing()
 
 # Skriver till fil #
 
-f = open("kalender.tex", "w")
+f = open("kalender-" + str(year) + ".tex", "w")
 f.write(latex)
 
-print ("Skrivet till *kalender.tex*!")
+print ("Skrivet till *kalender-" + str(year) + ".tex*!")
