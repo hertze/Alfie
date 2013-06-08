@@ -11,6 +11,8 @@ if language == "en":
     monthname = ["January","February","Mars","April","May","June","July","August","September","October","November","December"]
     thisweek = "this week"
     currweek = "week"
+    saturday = "saturday"
+    sunday = "sunday"
     av = "by"
     titel = "in Filofax Personal Size"
 else:
@@ -18,17 +20,23 @@ else:
     monthname = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"]
     thisweek = "denna vecka"
     currweek = "vecka"
+    saturday = "lördag"
+    sunday = "söndag"
     av = "av"
     titel = "för Filofax Personal"
 
 # Funktioner #
 
 def readfile(name):
-    n = []
-    f = open(name, "r")
-    for i in f:
-        n.append(i)
-    return n
+    try:
+        n = []
+        f = open(name, "r")
+        for i in f:
+            n.append(i)
+        return n
+    except:
+        print ("Cannot read " + name + "\n")
+        return False
 
 def spliceyear(vecka):
     c = calendar.LocaleTextCalendar(locale='sv_SE')
@@ -79,21 +87,23 @@ def getmonth(envecka):
     return str(month)
     
 def holiday(dagar):
-    if str(dagar[3]) == "lördag" or str(dagar[3]) == "söndag":
+    if str(dagar[3]) == saturday or str(dagar[3]) == sunday:
         return True
     else:
         idag = str(dagar[2]) + " " + str(dagar[0])
-        for line in holidays:
-            if idag == line.rstrip():
-                return True
+        if holidays != False:
+            for line in holidays:
+                if idag == line.rstrip():
+                    return True
                 
 def notat(dagar):
     notat = ""
     idag = str(dagar[2]) + " " + str(dagar[0])
-    for line in notes:
-        line = line.split(": ")
-        if idag == line[0]:
-            notat = line[1]
+    if notes != False:
+        for line in notes:
+            line = line.split(": ")
+            if idag == line[0]:
+                notat = line[1]
     return notat  
 
 def buildspreads():
