@@ -23,6 +23,13 @@ else:
 
 # Funktioner #
 
+def readfile(name):
+    n = []
+    f = open(name, "r")
+    for i in f:
+        n.append(i)
+    return n
+
 def spliceyear(vecka):
     c = calendar.LocaleTextCalendar(locale='sv_SE')
     for wholeyear in c.yeardatescalendar(year, 1): # Spalta upp hela året
@@ -76,16 +83,14 @@ def holiday(dagar):
         return True
     else:
         idag = str(dagar[2]) + " " + str(dagar[0])
-        f = open("holiday-" + str(year) + ".txt", "r")
-        for line in f:
+        for line in holidays:
             if idag == line.rstrip():
                 return True
                 
 def notat(dagar):
     notat = ""
     idag = str(dagar[2]) + " " + str(dagar[0])
-    f = open("notat-" + str(year) + ".txt", "r")
-    for line in f:
+    for line in notes:
         line = line.split(": ")
         if idag == line[0]:
             notat = line[1]
@@ -177,6 +182,14 @@ def closing():
     latex = ""
     latex = latex + "\end{document}\n\n"
     return latex
+    
+# Läser filer #
+
+print ("Reads: holidays-" + str(year) + ".txt\n")
+holidays = readfile("holidays-" + str(year) + ".txt")
+
+print ("Reads: notes-" + str(year) + ".txt\n")
+notes = readfile("notes-" + str(year) + ".txt")
 
 # Nu sätter vi samman allt #
 
@@ -189,4 +202,4 @@ latex = preamble() + opening() + buildspreads() + closing()
 f = open("kalender-" + str(year) + ".tex", "w")
 f.write(latex)
 
-print ("Skrivet till *kalender-" + str(year) + ".tex*!")
+print ("Writes LaTeX document to *kalender-" + str(year) + ".tex*!")
