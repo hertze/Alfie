@@ -2,28 +2,7 @@
 
 import calendar
 import datetime
-
-language = input("What language (sv/en)? ")
-year = int(input("What year (YYYY)? "))
-
-if language == "en":
-    dayname = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
-    monthname = ["January","February","Mars","April","May","June","July","August","September","October","November","December"]
-    thisweek = "this week"
-    currweek = "week"
-    saturday = "saturday"
-    sunday = "sunday"
-    av = "by"
-    titel = "in Filofax Personal Size"
-else:
-    dayname = ["måndag","tisdag","onsdag","torsdag","fredag","lördag","söndag"]
-    monthname = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"]
-    thisweek = "denna vecka"
-    currweek = "vecka"
-    saturday = "lördag"
-    sunday = "söndag"
-    av = "av"
-    titel = "för Filofax Personal"
+import re
 
 # Funktioner #
 
@@ -35,7 +14,7 @@ def readfile(name):
             n.append(i)
         return n
     except:
-        print ("Cannot read " + name + "\n")
+        print ("I cannot load " + name + ", but I'll probably manage without it.\n")
         return False
 
 def spliceyear(vecka):
@@ -193,18 +172,61 @@ def closing():
     latex = latex + "\end{document}\n\n"
     return latex
     
+    
+# Nu börjar vi! #    
+
 # Läser filer #
 
-print ("Reads: holidays-" + str(year) + ".txt\n")
-holidays = readfile("holidays-" + str(year) + ".txt")
+print ("\n\nA L F I E\n\nA somewhat clever calendar generator for Filofax Personal\n---------------------------------------------------------\n\n")
 
-print ("Reads: notes-" + str(year) + ".txt\n")
+language = ""
+year = ""
+match = False
+
+
+while not (language == "sv" or language == "en"): # Kollar så rätt språk anges
+    language = input("What language should I use (sv/en)? ")
+    
+while not match: # Kollar så det är ett riktigt årtal
+    year = int(input("\nWhat year do you need (YYYY)? "))
+    match = re.search("^\d{4}$", str(year))
+
+if language == "en":
+    dayname = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
+    monthname = ["January","February","Mars","April","May","June","July","August","September","October","November","December"]
+    thisweek = "this week"
+    currweek = "week"
+    saturday = "saturday"
+    sunday = "sunday"
+    av = "by"
+    titel = "in Filofax Personal Size"
+else:
+    dayname = ["måndag","tisdag","onsdag","torsdag","fredag","lördag","söndag"]
+    monthname = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"]
+    thisweek = "denna vecka"
+    currweek = "vecka"
+    saturday = "lördag"
+    sunday = "söndag"
+    av = "av"
+    titel = "för Filofax Personal"
+
+
+holidays = readfile("holidays-" + str(year) + "-" + language + ".txt")
+if holidays != False:
+    print ("\nI've successfully loaded *holidays-" + str(year) + "-" + language + ".txt*.\n")
+
 notes = readfile("notes-" + str(year) + ".txt")
+if holidays != False:
+    print ("I've successfully loaded *notes-" + str(year) + ".txt*.\n")
 
 # Nu sätter vi samman allt #
 
+print ("I'm building your calendar now.\n")
+
 latex = ""
 latex = preamble() + opening() + buildspreads() + closing()
+
+print ("Done!\n")
     
 
 # Skriver till fil #
@@ -212,4 +234,4 @@ latex = preamble() + opening() + buildspreads() + closing()
 f = open("kalender-" + str(year) + ".tex", "w")
 f.write(latex)
 
-print ("Writes LaTeX document to *kalender-" + str(year) + ".tex*!")
+print ("I've written the LaTeX document to *kalender-" + str(year) + ".tex*.\nHave a nice day!\n\n---------------------------------------------------------\n\n")
