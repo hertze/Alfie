@@ -155,7 +155,6 @@ def preamble():
     latex = latex + "\\defaultfontfeatures{Mapping=tex-text}\n"
     latex = latex + "\\setromanfont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro Light}\n"
     latex = latex + "\\setmonofont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro}\n\n"
-    latex = latex + "\\setsansfont[Ligatures={Common}, Numbers={OldStyle}, Scale=2.81]{Adobe Caslon Pro}\n\n"
     latex = latex + "\geometry{paperwidth=96mm, paperheight=172mm, margin=5.5mm, bottom=0mm, top=3.5mm, left=11.5mm, nohead}\n\n"
     latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4mm,minimum width=4mm, line width=0.1pt] (char) {#1};}}\n\n"
     latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.5mm,minimum width=4.5mm, , line width=0.1pt, fill=black] (char) {#1};}}\n\n"
@@ -164,7 +163,7 @@ def preamble():
 def opening():
     latex = ""
     latex = latex + "\\begin{document}\n\n"
-    latex = latex + "\\title{\\sffamily " + str(year) + "\\\ \\vspace{0.25em} \\normalfont " + titel + "}\n\\author{\\emph{" + av + "} Joakim Hertze}\n\\maketitle\n\n\\pagebreak\n\n"
+    latex = latex + "\\title{\\ttfamily \\Huge " + str(year) + "\\\ \\vspace{0.25em} \\Large \\normalfont " + titel + "}\n\\author{\\emph{" + av + "} Joakim Hertze}\n\\maketitle\n\n\\pagebreak\n\n"
     return latex
     
 def closing():
