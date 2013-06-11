@@ -150,6 +150,7 @@ def preamble():
     latex = latex + "\\usepackage{graphicx}\n"
     latex = latex + "\\usepackage{parskip}\n"
     latex = latex + "\\usepackage{tikz}\n"
+    latex = latex + "\\usepackage[bookmarks=true,pdfborder={0 0 0}]{hyperref}\n"
     latex = latex + "\\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}\n"
     latex = latex + "\\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}\n"
     latex = latex + "\\defaultfontfeatures{Mapping=tex-text}\n"
@@ -171,6 +172,10 @@ def closing():
     latex = latex + "\end{document}\n\n"
     return latex
     
+def getmatter(filecontents):  # Hämtar extra text
+    contents = "\n".join(filecontents)
+    return contents
+    
     
 # Nu börjar vi! #    
 
@@ -178,17 +183,26 @@ def closing():
 
 print ("\n\nA L F I E\n\nA somewhat clever calendar generator for Filofax Personal\n---------------------------------------------------------\n\n")
 
+print ("I have some questions before we begin:\n")
+
 language = ""
 year = ""
+frontmatter = ""
+backmatter = ""
 match = False
 
-
 while not (language == "sv" or language == "en"): # Kollar så rätt språk anges
-    language = input("What language should I use (sv/en)? ")
+    language = input("> What language should I use (sv/en)? ")
     
 while not match: # Kollar så det är ett riktigt årtal
-    year = int(input("\nWhat year do you need (YYYY)? "))
+    year = int(input("\n> What year do you need (YYYY)? "))
     match = re.search("^\d{4}$", str(year))
+    
+while not (frontmatter == "yes" or frontmatter == "no"): # Kollar så ja eller nej anges
+    frontmatter = input("\n> Shall I include frontmatter (yes/no)? ")
+    
+while not (backmatter == "yes" or backmatter == "no"): # Kollar så ja eller nej anges
+    backmatter = input("\n> Shall I include backmatter (yes/no)? ")
 
 if language == "en":
     dayname = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
@@ -220,10 +234,16 @@ if holidays != False:
 
 # Nu sätter vi samman allt #
 
-print ("I'm building your calendar now.\n")
-
 latex = ""
-latex = preamble() + opening() + buildspreads() + closing()
+latex = preamble() + opening()
+if frontmatter == "yes":
+    latex = latex + getmatter(readfile("frontmatter-" + str(year) + "-" + language + ".txt")) + "\\pagebreak\n\n"
+latex = latex + buildspreads()
+if backmatter == "yes":
+    latex = latex + "\\pagebreak\n\n" + getmatter(readfile("backmatter-" + str(year) + "-" + language + ".txt"))
+latex = latex + closing()
+
+print ("I'm building your calendar now.\n")
 
 print ("Done!\n")
     
