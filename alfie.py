@@ -1,5 +1,10 @@
 #! /usr/bin/env python3.3
 
+# A L F I E
+# version 1.0
+#
+# by Joakim Hertze
+
 import calendar
 import datetime
 import re
