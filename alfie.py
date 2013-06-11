@@ -214,9 +214,9 @@ holidays = readfile("holidays-" + str(year) + "-" + language + ".txt")
 if holidays != False:
     print ("\nI've successfully loaded *holidays-" + str(year) + "-" + language + ".txt*.\n")
 
-notes = readfile("notes-" + str(year) + ".txt")
+notes = readfile("notes-" + str(year) + "-" + language +  ".txt")
 if holidays != False:
-    print ("I've successfully loaded *notes-" + str(year) + ".txt*.\n")
+    print ("I've successfully loaded *notes-" + str(year) + "-" + language +  ".txt*.\n")
 
 # Nu sätter vi samman allt #
 
