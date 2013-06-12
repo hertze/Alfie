@@ -33,14 +33,15 @@ def spliceyear(vecka):
                 for days in weeks:
                     d = datetime.date
                     dt = d.timetuple(days)
+                    
                     weeknumber = d.isocalendar(days)
-                
+                    curryear = dt[0]
                     month = monthname[dt[1]-1]
                     datum = dt[2]
                     weekday = dayname[dt[6]]
                     veckonummer = weeknumber[1]
                 
-                    dennavecka.append([month, veckonummer, datum, weekday])
+                    dennavecka.append([month, veckonummer, datum, weekday, curryear])
                 vecka.append(dennavecka)
     return vecka
     
@@ -69,6 +70,10 @@ def getmonth(envecka):
     if month != month2:
         month = month + "--" + month2
     return str(month)
+    
+def getyear(dagar):
+    return dagar[4]
+    
     
 def holiday(dagar):
     if str(dagar[3]) == saturday or str(dagar[3]) == sunday:
@@ -104,7 +109,7 @@ def buildspreads():
             notattext = notat(dagar)
             if n < 3: # måndag -- onsdag
                 if n == 0:
-                    latex = latex + "\\Large\\ttfamily " + versomonth + " " + str(year) + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
+                    latex = latex + "\\Large\\ttfamily " + versomonth + " " + str(getyear(dagar)) + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
                     latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                     latex = latex + "\\normalsize " + thisweek + "\n\n"
                     latex = latex + "\\vspace{28.5mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
@@ -125,7 +130,7 @@ def buildspreads():
                     latex = latex + "\\pagebreak\n\n"            
             else:
                 if n == 3:
-                    latex = latex + "\\hfill \\Large\\ttfamily " + rectomonth + " " + str(year) + " \\normalfont\\normalsize\n\n"
+                    latex = latex + "\\hfill \\Large\\ttfamily " + rectomonth + " " + str(getyear(dagar)) + " \\normalfont\\normalsize\n\n"
                     latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                 if holiday(dagar):
                     if notattext != "":
