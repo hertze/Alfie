@@ -246,11 +246,13 @@ if holidays != False:
 
 latex = ""
 latex = preamble() + opening()
-if frontmatter == "yes":
-    latex = latex + getmatter(readfile("frontmatter-" + str(year) + "-" + language + ".txt")) + "\\pagebreak\n\n"
+filefrontmatter = readfile("frontmatter-" + str(year) + "-" + language + ".txt")
+if frontmatter == "yes" and filefrontmatter != False:
+    latex = latex + getmatter(filefrontmatter) + "\\pagebreak\n\n"
 latex = latex + buildspreads()
-if backmatter == "yes":
-    latex = latex + "\\pagebreak\n\n" + getmatter(readfile("backmatter-" + str(year) + "-" + language + ".txt"))
+filebackmatter = readfile("backmatter-" + str(year) + "-" + language + ".txt")
+if backmatter == "yes" and filebackmatter != False:
+    latex = latex + "\\pagebreak\n\n" + getmatter(filebackmatter)
 latex = latex + closing()
 
 print ("I'm building your calendar now.\n")
