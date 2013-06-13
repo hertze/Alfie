@@ -115,7 +115,7 @@ def buildspreads():
                     latex = latex + "\\Large\\ttfamily " + versoheader + " " + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
                     latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                     latex = latex + "\\normalsize " + thisweek + "\n\n"
-                    latex = latex + "\\vspace{28.5mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
+                    latex = latex + "\\vspace{" + vspace +"mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if holiday(dagar):
                     if notattext != "":
                         latex = latex + "\\large\\ttfamily \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0.2mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
@@ -128,7 +128,7 @@ def buildspreads():
                         latex = latex + "\\large\\ttfamily \\circled{" + str(dagar[2]) + "} \\hspace{0.2mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
                 
                 if n < 2:
-                    latex = latex + "\\vspace{28.5mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
+                    latex = latex + "\\vspace{" + vspace +"mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 2:
                     latex = latex + "\\pagebreak\n\n"            
             else:
@@ -146,7 +146,7 @@ def buildspreads():
                     else:
                         latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0.2mm} \\large \\ttfamily \\circled{" + str(dagar[2]) + "} \\normalfont\\normalsize\n\n"
                 if n < 6:
-                    latex = latex + "\\vspace{28.5mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
+                    latex = latex + "\\vspace{" + vspace +"mm}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 6:
                     latex = latex + "\\pagebreak\n\n"  
             n = n + 1
@@ -169,7 +169,7 @@ def preamble():
     latex = latex + "\\defaultfontfeatures{Mapping=tex-text}\n"
     latex = latex + "\\setromanfont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro Light}\n"
     latex = latex + "\\setmonofont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro}\n\n"
-    latex = latex + "\geometry{paperwidth=96mm, paperheight=172mm, margin=5.5mm, bottom=0mm, top=3.5mm, left=11.5mm, nohead}\n\n"
+    latex = latex + "\geometry{paperwidth=" + paperwidth + "mm, paperheight=" + paperheight + "mm, margin=" + margin + "mm, bottom=" + bottom + "mm, top=" + top + "mm, left=" + left + "mm, nohead}\n\n"
     latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4mm,minimum width=4mm, line width=0.1pt] (char) {#1};}}\n\n"
     latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.5mm,minimum width=4.5mm, , line width=0.1pt, fill=black] (char) {#1};}}\n\n"
     return latex
@@ -194,18 +194,23 @@ def getmatter(filecontents):  # Hämtar extra text
 
 # Läser filer #
 
-print ("\n\nA L F I E\n\nA somewhat clever calendar generator for Filofax Personal\n---------------------------------------------------------\n\n")
+print ("\n\nA L F I E\n\nA somewhat clever diary generator for Filofax-sized binders\n")
+print ("---------------------------------------------------------\n\n")
 
 print ("I have some questions before we begin:\n")
 
+paper = ""
 language = ""
 year = ""
 frontmatter = ""
 backmatter = ""
 match = False
 
+while not (paper == "personal" or paper == "a5" or paper == "pocket"): # Kollar så rätt språk anges
+    paper = input("> What paper size would you like (pocket/personal/a5)? ")
+
 while not (language == "sv" or language == "en"): # Kollar så rätt språk anges
-    language = input("> What language should I use (sv/en)? ")
+    language = input("\n> What language should I use (sv/en)? ")
     
 while not match: # Kollar så det är ett riktigt årtal
     year = int(input("\n> What year do you need (YYYY)? "))
@@ -216,6 +221,35 @@ while not (frontmatter == "yes" or frontmatter == "no"): # Kollar så ja eller n
     
 while not (backmatter == "yes" or backmatter == "no"): # Kollar så ja eller nej anges
     backmatter = input("\n> Shall I include backmatter (yes/no)? ")
+    
+# Paper-dimensions  
+  
+if paper == "a5":
+    vspace = "37.5"
+    paperheight = "212"
+    paperwidth = "150"
+    margin = "5.5"
+    left = "11.5"
+    top = "5.5"
+    bottom = "0"
+elif paper == "pocket":
+    vspace = "15.5"
+    paperheight = "122"
+    paperwidth = "83"
+    margin = "5.5"
+    left = "11.5"
+    top = "5.5"
+    bottom = "0"
+else:
+    vspace = "28.5"
+    paperheight = "172"
+    paperwidth = "96"
+    margin = "5.5"
+    left = "11.5"
+    top = "5.5"
+    bottom = "0"
+    
+# Localisations
 
 if language == "en":
     dayname = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
@@ -225,7 +259,7 @@ if language == "en":
     saturday = "saturday"
     sunday = "sunday"
     av = "by"
-    titel = "in Filofax Personal Size"
+    titel = "for Filofax " + paper + " Size"
 else:
     dayname = ["måndag","tisdag","onsdag","torsdag","fredag","lördag","söndag"]
     monthname = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"]
@@ -234,7 +268,7 @@ else:
     saturday = "lördag"
     sunday = "söndag"
     av = "av"
-    titel = "för Filofax Personal"
+    titel = "för Filofax " + paper.title()
 
 
 holidays = readfile("holidays-" + str(year) + "-" + language + ".txt")
@@ -245,7 +279,7 @@ notes = readfile("notes-" + str(year) + "-" + language +  ".txt")
 if holidays != False:
     print ("I've successfully loaded *notes-" + str(year) + "-" + language +  ".txt*.\n")
 
-# Nu sätter vi samman allt #
+# Assembly
 
 latex = ""
 latex = preamble() + opening()
@@ -263,9 +297,9 @@ print ("I'm building your calendar now.\n")
 print ("Done!\n")
     
 
-# Skriver till fil #
+# Write to file
 
 f = open("kalender-" + str(year) + ".tex", "w")
 f.write(latex)
 
-print ("I've written the LaTeX document to *kalender-" + str(year) + ".tex*.\nHave a nice day!\n\n---------------------------------------------------------\n\n")
+print ("I've written the LaTeX document to *kalender-" + str(year) + ".tex*.\n\nHave a nice day!\n\n---------------------------------------------------------\n\n")
