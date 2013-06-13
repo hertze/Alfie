@@ -1,7 +1,7 @@
 #! /usr/bin/env python3.3
 
 # A L F I E
-# version 1.1
+# version 1.2
 #
 # by Joakim Hertze
 
@@ -19,7 +19,7 @@ def readfile(name):
             n.append(i)
         return n
     except:
-        print ("I cannot load " + name + ", but I'll probably manage without it.\n")
+        print ("\n--> I cannot load " + name + ", but I'll probably manage without it.")
         return False
 
 def spliceyear(vecka):
@@ -190,14 +190,12 @@ def getmatter(filecontents):  # Hämtar extra text
     return contents
     
     
-# Nu börjar vi! #    
+# Lets start this already    
 
-# Läser filer #
-
-print ("\n\nA L F I E\n\nA somewhat clever diary generator for Filofax-sized binders\n")
-print ("---------------------------------------------------------\n\n")
-
-print ("I have some questions before we begin:\n")
+print ("\n\nA L F I E\n\nA somewhat clever diary generator for Filofax-sized binders")
+print ("\n---------------------------------------------------------\n")
+print ("\nHello,")
+print ("\nI have some questions before we begin:\n")
 
 paper = ""
 language = ""
@@ -207,7 +205,7 @@ backmatter = ""
 match = False
 
 while not (paper == "personal" or paper == "a5" or paper == "pocket"): # Kollar så rätt språk anges
-    paper = input("> What paper size would you like (pocket/personal/a5)? ")
+    paper = input("\n> What paper size should I use (pocket/personal/a5)? ")
 
 while not (language == "sv" or language == "en"): # Kollar så rätt språk anges
     language = input("\n> What language should I use (sv/en)? ")
@@ -225,11 +223,11 @@ while not (backmatter == "yes" or backmatter == "no"): # Kollar så ja eller nej
 # Paper-dimensions  
   
 if paper == "a5":
-    vspace = "37.5"
+    vspace = "38"
     paperheight = "212"
     paperwidth = "150"
     margin = "5.5"
-    left = "11.5"
+    left = "12.5"
     top = "5.5"
     bottom = "0"
 elif paper == "pocket":
@@ -237,7 +235,7 @@ elif paper == "pocket":
     paperheight = "122"
     paperwidth = "83"
     margin = "5.5"
-    left = "11.5"
+    left = "9.5"
     top = "5.5"
     bottom = "0"
 else:
@@ -270,36 +268,42 @@ else:
     av = "av"
     titel = "för Filofax " + paper.title()
 
+# Read supplementary files
 
 holidays = readfile("holidays-" + str(year) + "-" + language + ".txt")
 if holidays != False:
-    print ("\nI've successfully loaded *holidays-" + str(year) + "-" + language + ".txt*.\n")
+    print ("\n--> I've successfully loaded *holidays-" + str(year) + "-" + language + ".txt*.")
 
 notes = readfile("notes-" + str(year) + "-" + language +  ".txt")
 if holidays != False:
-    print ("I've successfully loaded *notes-" + str(year) + "-" + language +  ".txt*.\n")
+    print ("\n--> I've successfully loaded *notes-" + str(year) + "-" + language +  ".txt*.")
 
-# Assembly
+# Let's assemble the diary
 
 latex = ""
 latex = preamble() + opening()
-filefrontmatter = readfile("frontmatter-" + str(year) + "-" + language + ".txt")
-if frontmatter == "yes" and filefrontmatter != False:
-    latex = latex + getmatter(filefrontmatter) + "\\pagebreak\n\n"
+
+if frontmatter == "yes":
+    filefrontmatter = readfile("frontmatter-" + str(year) + "-" + language + ".txt")
+    if filefrontmatter != False:
+        latex = latex + getmatter(filefrontmatter) + "\\pagebreak\n\n"
+        
 latex = latex + buildspreads()
-filebackmatter = readfile("backmatter-" + str(year) + "-" + language + ".txt")
-if backmatter == "yes" and filebackmatter != False:
-    latex = latex + "\\pagebreak\n\n" + getmatter(filebackmatter)
+
+if backmatter == "yes":
+    filebackmatter = readfile("backmatter-" + str(year) + "-" + language + ".txt")
+    if filebackmatter != False:
+        latex = latex + "\\pagebreak\n\n" + getmatter(filebackmatter)
+        
 latex = latex + closing()
 
-print ("I'm building your calendar now.\n")
+print ("\nI'm building your calendar now.")
+print ("\nDone!")
 
-print ("Done!\n")
-    
+# Write it to file
 
-# Write to file
-
-f = open("kalender-" + str(year) + ".tex", "w")
+f = open("diary-" + str(year) + ".tex", "w")
 f.write(latex)
 
-print ("I've written the LaTeX document to *kalender-" + str(year) + ".tex*.\n\nHave a nice day!\n\n---------------------------------------------------------\n\n")
+print ("\nI've written the LaTeX document to *diary-" + str(year) + ".tex* for you to typeset at your convenience.\n\nHave a nice day!")
+print ("\n\n---------------------------------------------------------\n\n")
