@@ -1,7 +1,7 @@
 #! /usr/bin/env python3.3
 
 # A L F I E
-# version 1.0
+# version 1.1
 #
 # by Joakim Hertze
 
