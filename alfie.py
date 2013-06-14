@@ -193,8 +193,11 @@ def getmatter(filecontents):  # Hämtar extra text
     
     
 # Lets start this already
+#
+# If the script is called with arguments, it's run without feedback. Otherwise we try
+# to create some friendly interaction
 
-if len(sys.argv) < 2: # If script is called without arguments ask for info
+if len(sys.argv) < 2:
     print ("\n\nA L F I E\n\nA somewhat clever diary generator for Filofax-sized binders")
     print ("\n---------------------------------------------------------\n")
     print ("\nHello,")
@@ -231,7 +234,7 @@ else:
     frontmatter = args[3]
     backmatter = args[4]
 
-# Paper-dimensions  
+# Set paper dimensions according to provided argument or choice  
   
 if paper == "a5":
     vspace = "38"
@@ -258,7 +261,7 @@ else:
     top = "5.5"
     bottom = "5"
     
-# Localisations
+# Set proper language according to argument or choice
 
 if language == "en":
     dayname = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"]
