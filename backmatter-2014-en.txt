@@ -1,6 +1,6 @@
 \pagebreak
 
-\vspace*{100mm}
+\null\vfill
 
 \centering
 
@@ -9,3 +9,5 @@
 This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/3.0/.
 
 This insert is available from \textcolor{blue}{\href{http://hertze.com/filofilia}{hertze.com/filofilia}}.
+
+\vspace{5mm}
