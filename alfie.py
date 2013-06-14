@@ -229,7 +229,7 @@ if paper == "a5":
     margin = "5.5"
     left = "12.5"
     top = "5.5"
-    bottom = "0"
+    bottom = "5"
 elif paper == "pocket":
     vspace = "15.5"
     paperheight = "122"
@@ -237,7 +237,7 @@ elif paper == "pocket":
     margin = "5.5"
     left = "9.5"
     top = "5.5"
-    bottom = "0"
+    bottom = "5"
 else:
     vspace = "28.5"
     paperheight = "172"
@@ -245,7 +245,7 @@ else:
     margin = "5.5"
     left = "11.5"
     top = "5.5"
-    bottom = "0"
+    bottom = "5"
     
 # Localisations
 
@@ -302,8 +302,8 @@ print ("\nDone!")
 
 # Write it to file
 
-f = open("diary-" + str(year) + ".tex", "w")
+f = open("diary-" + paper + "-" + str(year) + "-" + language + ".tex", "w")
 f.write(latex)
 
-print ("\nI've written the LaTeX document to *diary-" + str(year) + ".tex* for you to typeset at your convenience.\n\nHave a nice day!")
+print ("\nI've written the LaTeX document to *diary-" + paper + "-" + str(year) + "-" + language + ".tex* for you to typeset at your convenience.\n\nHave a nice day!")
 print ("\n\n---------------------------------------------------------\n\n")
