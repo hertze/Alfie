@@ -257,7 +257,7 @@ if language == "en":
     saturday = "saturday"
     sunday = "sunday"
     av = "by"
-    titel = "for Filofax " + paper + " Size"
+    titel = "for Filofax " + paper.title() + " Size"
 else:
     dayname = ["måndag","tisdag","onsdag","torsdag","fredag","lördag","söndag"]
     monthname = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"]
