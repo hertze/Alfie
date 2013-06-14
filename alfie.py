@@ -8,6 +8,7 @@
 import calendar
 import datetime
 import re
+import sys
 
 # Funktioner #
 
@@ -19,7 +20,8 @@ def readfile(name):
             n.append(i)
         return n
     except:
-        print ("\n--> I cannot load " + name + ", but I'll probably manage without it.")
+        if len(sys.argv) < 2: # Only feedback is script is run without arguments
+            print ("\n--> I cannot load " + name + ", but I'll probably manage without it.")
         return False
 
 def spliceyear(vecka):
@@ -190,36 +192,45 @@ def getmatter(filecontents):  # Hämtar extra text
     return contents
     
     
-# Lets start this already    
+# Lets start this already
 
-print ("\n\nA L F I E\n\nA somewhat clever diary generator for Filofax-sized binders")
-print ("\n---------------------------------------------------------\n")
-print ("\nHello,")
-print ("\nI have some questions before we begin:\n")
+if len(sys.argv) < 2: # If script is called without arguments ask for info
+    print ("\n\nA L F I E\n\nA somewhat clever diary generator for Filofax-sized binders")
+    print ("\n---------------------------------------------------------\n")
+    print ("\nHello,")
+    print ("\nI have some questions before we begin:\n")
 
-paper = ""
-language = ""
-year = ""
-frontmatter = ""
-backmatter = ""
-match = False
+    paper = ""
+    language = ""
+    year = ""
+    frontmatter = ""
+    backmatter = ""
+    match = False
 
-while not (paper == "personal" or paper == "a5" or paper == "pocket"): # Kollar så rätt språk anges
-    paper = input("\n> What paper size should I use (pocket/personal/a5)? ")
+    while not (paper == "personal" or paper == "a5" or paper == "pocket"): # Kollar så rätt språk anges
+        paper = input("\n> What paper size should I use (pocket/personal/a5)? ")
 
-while not (language == "sv" or language == "en"): # Kollar så rätt språk anges
-    language = input("\n> What language should I use (sv/en)? ")
+    while not (language == "sv" or language == "en"): # Kollar så rätt språk anges
+        language = input("\n> What language should I use (sv/en)? ")
     
-while not match: # Kollar så det är ett riktigt årtal
-    year = int(input("\n> What year do you need (YYYY)? "))
-    match = re.search("^\d{4}$", str(year))
+    while not match: # Kollar så det är ett riktigt årtal
+        year = int(input("\n> What year do you need (YYYY)? "))
+        match = re.search("^\d{4}$", str(year))
     
-while not (frontmatter == "yes" or frontmatter == "no"): # Kollar så ja eller nej anges
-    frontmatter = input("\n> Shall I include frontmatter (yes/no)? ")
+    while not (frontmatter == "yes" or frontmatter == "no"): # Kollar så ja eller nej anges
+        frontmatter = input("\n> Shall I include frontmatter (yes/no)? ")
     
-while not (backmatter == "yes" or backmatter == "no"): # Kollar så ja eller nej anges
-    backmatter = input("\n> Shall I include backmatter (yes/no)? ")
-    
+    while not (backmatter == "yes" or backmatter == "no"): # Kollar så ja eller nej anges
+        backmatter = input("\n> Shall I include backmatter (yes/no)? ")    
+else:
+    match = False
+    args = sys.argv[1].split("-")
+    paper = args[0]
+    language = args[1]
+    year = int(args[2])
+    frontmatter = args[3]
+    backmatter = args[4]
+
 # Paper-dimensions  
   
 if paper == "a5":
@@ -297,13 +308,15 @@ if backmatter == "yes":
         
 latex = latex + closing()
 
-print ("\nI'm building your calendar now.")
-print ("\nDone!")
+if len(sys.argv) < 2: # Only feedback is script is run without arguments
+    print ("\nI'm building your calendar now.")
+    print ("\nDone!")
 
 # Write it to file
 
 f = open("diary-" + paper + "-" + str(year) + "-" + language + ".tex", "w")
 f.write(latex)
 
-print ("\nI've written the LaTeX document to *diary-" + paper + "-" + str(year) + "-" + language + ".tex* for you to typeset at your convenience.\n\nHave a nice day!")
-print ("\n\n---------------------------------------------------------\n\n")
+if len(sys.argv) < 2: # Only feedback is script is run without arguments
+    print ("\nI've written the LaTeX document to *diary-" + paper + "-" + str(year) + "-" + language + ".tex* for you to typeset at your convenience.\n\nHave a nice day!")
+    print ("\n\n---------------------------------------------------------\n\n")
