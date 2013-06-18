@@ -167,7 +167,7 @@ def preamble():
     latex = latex + "\\usepackage{tikz}\n"
     latex = latex + "\\usepackage[bookmarks=true,pdfborder={0 0 0}]{hyperref}\n"
     latex = latex + "\\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}\n"
-    latex = latex + "\\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}\n"
+    latex = latex + "\\usepackage[cross," + printpaper + ",center,dvips,noinfo,odd]{crop}\n"
     latex = latex + "\\defaultfontfeatures{Mapping=tex-text}\n"
     latex = latex + "\\setromanfont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro Light}\n"
     latex = latex + "\\setmonofont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro}\n\n"
@@ -198,20 +198,25 @@ def getmatter(filecontents):  # Hämtar extra text
 # to create some friendly interaction
 
 if len(sys.argv) < 2:
+    printruns = 1   # If no arguments were given, we only run it once
     print ("\n\nA L F I E\n\nA somewhat clever diary generator for Filofax-sized binders")
     print ("\n---------------------------------------------------------\n")
     print ("\nHello,")
     print ("\nI have some questions before we begin:\n")
 
+    printpaper = ""
     paper = ""
     language = ""
     year = ""
     frontmatter = ""
     backmatter = ""
     match = False
+    
+    while not (printpaper == "a5" or printpaper == "a4"): # Kollar så rätt printerpapper
+        printpaper = input("\n> What size of paper will you be printing on (a5/a4)? ")
 
     while not (paper == "personal" or paper == "a5" or paper == "pocket"): # Kollar så rätt språk anges
-        paper = input("\n> What paper size should I use (pocket/personal/a5)? ")
+        paper = input("\n> What format should I use for your insert (pocket/personal/a5)? ")
 
     while not (language == "sv" or language == "en"): # Kollar så rätt språk anges
         language = input("\n> What language should I use (sv/en)? ")
@@ -228,11 +233,12 @@ if len(sys.argv) < 2:
 else:
     match = False
     args = sys.argv[1].split("-")
-    paper = args[0]
-    language = args[1]
-    year = int(args[2])
-    frontmatter = args[3]
-    backmatter = args[4]
+    printpaper = args[0]
+    paper = args[1]
+    language = args[2]
+    year = int(args[3])
+    frontmatter = args[4]
+    backmatter = args[5]
 
 # Set paper dimensions according to provided argument or choice  
   
