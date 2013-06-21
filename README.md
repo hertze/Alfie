@@ -24,11 +24,11 @@ If you launch the script without arguments, it will run with a minimal text inte
 
 Run it like this:
 
-> python3 alfie.py`
+> `python3 alfie.py`
 
 If you run it with an argument, it will run *without* any interface whatsoever. You need to use the following syntax for the argument to work:
     
-> python3 alfie.py <format>-<language>-<year>-<frontmatter>-<backmatter>-<typeset?>
+> `python3 alfie.py <format>-<language>-<year>-<frontmatter>-<backmatter>-<typeset?>
 For example:
 
 > `python3 alfie.py personal-en-2014-no-no-yes`
