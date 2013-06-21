@@ -1,7 +1,7 @@
 #! /usr/bin/env python3.3
 
 # A L F I E
-# version 1.2
+# version 1.3
 #
 # by Joakim Hertze
 
@@ -9,6 +9,7 @@ import calendar
 import datetime
 import re
 import sys
+import os
 
 # Funktioner #
 
@@ -207,21 +208,22 @@ if len(sys.argv) < 2: # No arguments are given
     frontmatter = ""
     backmatter = ""
     match = False
+    dolatex = ""
 
-    while not (paper == "personal" or paper == "a5" or paper == "pocket"): # Kollar så rätt språk anges
+    while not (paper == "personal" or paper == "a5" or paper == "pocket"): # # Make sure a correct format is chosen
         paper = input("\n> What format should I use for your insert (pocket/personal/a5)? ")
 
-    while not (language == "sv" or language == "en"): # Kollar så rätt språk anges
+    while not (language == "sv" or language == "en"): # # Make sure a correct language is chosen
         language = input("\n> What language should I use (sv/en)? ")
     
-    while not match: # Kollar så det är ett riktigt årtal
+    while not match: # # Make sure it's a valid yesr
         year = int(input("\n> What year do you need (YYYY)? "))
         match = re.search("^\d{4}$", str(year))
     
-    while not (frontmatter == "yes" or frontmatter == "no"): # Kollar så ja eller nej anges
+    while not (frontmatter == "yes" or frontmatter == "no"): # Make sure the answer is yes or no
         frontmatter = input("\n> Shall I include frontmatter (yes/no)? ")
     
-    while not (backmatter == "yes" or backmatter == "no"): # Kollar så ja eller nej anges
+    while not (backmatter == "yes" or backmatter == "no"): # Make sure the answer is yes or no
         backmatter = input("\n> Shall I include backmatter (yes/no)? ")    
 else: # Arguments are provided at launch
     match = False
@@ -231,6 +233,7 @@ else: # Arguments are provided at launch
     year = int(args[2])
     frontmatter = args[3]
     backmatter = args[4]
+    dolatex = args[5]
 
 # Set paper dimensions according to provided argument or choice  
   
@@ -319,5 +322,16 @@ f = open("diary-" + paper + "-" + str(year) + "-" + language + ".tex", "w")
 f.write(latex)
 
 if len(sys.argv) < 2: # Only feedback is script is run without arguments
-    print ("\nI've written the LaTeX document to *diary-" + paper + "-" + str(year) + "-" + language + ".tex* for you to typeset at your convenience.\n\nHave a nice day!")
+    print ("\nI've written the LaTeX document to *diary-" + paper + "-" + str(year) + "-" + language + ".tex*.")
+
+if len(sys.argv) < 2:    
+    while not (dolatex == "yes" or dolatex == "no"): # Make sure the answer is yes or no
+        dolatex = input("\n> Shall try to typeset your LaTeX document (yes/no)? ")
+
+if dolatex == "yes": # Shall it try to typeset the LaTeX file?
+    os.system("xelatex diary-" + paper + "-" + str(year) + "-" + language + ".tex")
+    print ("\nYour file has been typeset.")
+    
+if len(sys.argv) < 2: # Signing out
+    print ("\n\nHave a nice day!")    
     print ("\n\n---------------------------------------------------------\n\n")
