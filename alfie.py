@@ -11,7 +11,7 @@ import re
 import sys
 import os
 
-# Funktioner #
+# Some functions
 
 def readfile(name): # Reads a file and makes it into a list line by line
     try:
@@ -255,12 +255,12 @@ elif paper == "pocket":
     bottom = "5"
 else:
     vspace = "28.5"
-    paperheight = "172"
-    paperwidth = "96"
-    margin = "5.5"
-    left = "11.5"
-    top = "5.5"
-    bottom = "5"
+    paperheight = "173"
+    paperwidth = "97"
+    margin = "6"
+    left = "12"
+    top = "6"
+    bottom = "5.5"
     
 # Set proper language according to argument or choice
 
