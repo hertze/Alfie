@@ -12,7 +12,7 @@ import sys
 
 # Funktioner #
 
-def readfile(name):
+def readfile(name): # Reads a file and makes it into a list line by line
     try:
         n = []
         f = open(name, "r")
@@ -24,10 +24,9 @@ def readfile(name):
             print ("\n--> I cannot load " + name + ", but I'll probably manage without it.")
         return False
 
-def spliceyear(vecka):
+def spliceyear(vecka): # Chunk up the year
     c = calendar.LocaleTextCalendar(locale='sv_SE')
-    for wholeyear in c.yeardatescalendar(year, 1): # Spalta upp hela året
-        
+    for wholeyear in c.yeardatescalendar(year, 1):
         for months in wholeyear:
             for weeks in months:
                 dennavecka = []
@@ -47,7 +46,7 @@ def spliceyear(vecka):
                 vecka.append(dennavecka)
     return vecka
     
-def purge(vecka):
+def purge(vecka): # Remove duplicate weeks
     purged = []
     a = 0
     b = 0
@@ -62,11 +61,11 @@ def purge(vecka):
            purged.append(m)  
     return purged
 
-def getvecka(dagar):
+def getvecka(dagar): # Gets the current week and converts it to a string
     vecka = dagar[1]
     return str(vecka)
     
-def getheader(envecka): # Konstruerar datumöverskriften på varje sida
+def getheader(envecka): # Builds the date header for each page
     month = envecka[0][0] # Plockar månad och år från första och sista dagen av de som skickats till funktionen.
     month2 = envecka[-1][0]
     year = str(envecka[0][4])
@@ -80,7 +79,7 @@ def getheader(envecka): # Konstruerar datumöverskriften på varje sida
         header = month + " " + year
     return str(header)
     
-def holiday(dagar):
+def holiday(dagar): # Are this day a holiday?
     if str(dagar[3]) == saturday or str(dagar[3]) == sunday:
         return True
     else:
@@ -90,7 +89,7 @@ def holiday(dagar):
                 if idag == line.rstrip():
                     return True
                 
-def notat(dagar):
+def notat(dagar): # Checks if there is a note for the current day
     notat = ""
     idag = str(dagar[2]) + " " + str(dagar[0])
     if notes != False:
@@ -100,7 +99,7 @@ def notat(dagar):
                 notat = line[1]
     return notat  
 
-def buildspreads():
+def buildspreads(): # We build a week spread
     latex = ""
     vecka = []
     vecka = spliceyear(vecka)
@@ -154,7 +153,7 @@ def buildspreads():
             n = n + 1
     return latex
     
-def preamble():
+def preamble(): # This is the preamle
     latex = ""
     latex = latex + "\documentclass[11pt,titlepage]{article}\n"
     if language == "en":
@@ -167,7 +166,7 @@ def preamble():
     latex = latex + "\\usepackage{tikz}\n"
     latex = latex + "\\usepackage[bookmarks=true,pdfborder={0 0 0}]{hyperref}\n"
     latex = latex + "\\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}\n"
-    latex = latex + "\\usepackage[cross," + printpaper + ",center,dvips,noinfo,odd]{crop}\n"
+    latex = latex + "\\usepackage[cross,a4,center,dvips,noinfo,landscape,odd]{crop}\n"
     latex = latex + "\\defaultfontfeatures{Mapping=tex-text}\n"
     latex = latex + "\\setromanfont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro Light}\n"
     latex = latex + "\\setmonofont[Ligatures={Common}, Numbers={OldStyle}, Scale=0.7]{Source Sans Pro}\n\n"
@@ -176,44 +175,38 @@ def preamble():
     latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.5mm,minimum width=4.5mm, , line width=0.1pt, fill=black] (char) {#1};}}\n\n"
     return latex
 
-def opening():
+def opening(): # This is the opening part of the LaTeX document
     latex = ""
     latex = latex + "\\begin{document}\n\n"
     latex = latex + "\\title{\\ttfamily \\Huge " + str(year) + "\\\ \\vspace{0.25em} \\Large \\normalfont " + titel + "}\n\\author{\\emph{" + av + "} Joakim Hertze}\n\\maketitle\n\n\\pagebreak\n\n"
     return latex
     
-def closing():
+def closing(): # This is the closing part of the document
     latex = ""
     latex = latex + "\end{document}\n\n"
     return latex
     
-def getmatter(filecontents):  # Hämtar extra text
+def getmatter(filecontents):  # Reads front or back matter from file
     contents = "\n".join(filecontents)
     return contents
-    
     
 # Lets start this already
 #
 # If the script is called with arguments, it's run without feedback. Otherwise we try
 # to create some friendly interaction
 
-if len(sys.argv) < 2:
-    printruns = 1   # If no arguments were given, we only run it once
+if len(sys.argv) < 2: # No arguments are given
     print ("\n\nA L F I E\n\nA somewhat clever diary generator for Filofax-sized binders")
     print ("\n---------------------------------------------------------\n")
     print ("\nHello,")
     print ("\nI have some questions before we begin:\n")
 
-    printpaper = ""
     paper = ""
     language = ""
     year = ""
     frontmatter = ""
     backmatter = ""
     match = False
-    
-    while not (printpaper == "a5" or printpaper == "a4"): # Kollar så rätt printerpapper
-        printpaper = input("\n> What size of paper will you be printing on (a5/a4)? ")
 
     while not (paper == "personal" or paper == "a5" or paper == "pocket"): # Kollar så rätt språk anges
         paper = input("\n> What format should I use for your insert (pocket/personal/a5)? ")
@@ -230,15 +223,14 @@ if len(sys.argv) < 2:
     
     while not (backmatter == "yes" or backmatter == "no"): # Kollar så ja eller nej anges
         backmatter = input("\n> Shall I include backmatter (yes/no)? ")    
-else:
+else: # Arguments are provided at launch
     match = False
     args = sys.argv[1].split("-")
-    printpaper = args[0]
-    paper = args[1]
-    language = args[2]
-    year = int(args[3])
-    frontmatter = args[4]
-    backmatter = args[5]
+    paper = args[0]
+    language = args[1]
+    year = int(args[2])
+    frontmatter = args[3]
+    backmatter = args[4]
 
 # Set paper dimensions according to provided argument or choice  
   
