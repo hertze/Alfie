@@ -286,11 +286,11 @@ else:
 # Read supplementary files
 
 holidays = readfile("holidays-" + str(year) + "-" + language + ".txt")
-if holidays != False:
+if holidays != False and len(sys.argv) < 2:
     print ("\n--> I've successfully loaded *holidays-" + str(year) + "-" + language + ".txt*.")
 
 notes = readfile("notes-" + str(year) + "-" + language +  ".txt")
-if holidays != False:
+if holidays != False  and len(sys.argv) < 2:
     print ("\n--> I've successfully loaded *notes-" + str(year) + "-" + language +  ".txt*.")
 
 # Let's assemble the diary
