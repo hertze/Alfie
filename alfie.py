@@ -1,7 +1,7 @@
 #! /usr/bin/env python3.3
 
 # A L F I E
-# version 1.3
+# version 1.4
 #
 # by Joakim Hertze
 
@@ -203,7 +203,7 @@ def week2pageswnotes(): # We build a week spread
                     latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 6:
                     latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
-                    latex = latex + "\\hfill \\small " + notes + " \n\n\\vspace{\stretch{4}}\\pagebreak\n\n" 
+                    latex = latex + "\\hfill \\small " + notesden + " \n\n\\vspace{\stretch{4}}\\pagebreak\n\n" 
                     latex = latex + "\\pagebreak\n\n"
             n = n + 1
     return latex
@@ -238,7 +238,7 @@ def week1page(): # We build a week spread
                     latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 6:
                     latex = latex + "\\vspace{\stretch{1}}\\pagebreak\n\n" 
-                    latex = latex + "\\hfill \\small " + notes + " \n\n"
+                    latex = latex + "\\hfill \\small " + notesden + " \n\n"
                     latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                     latex = latex + "\\pagebreak\n\n"          
             n = n + 1
@@ -294,6 +294,7 @@ if len(sys.argv) < 2: # No arguments are given
     print ("\nI have some questions before we begin:\n")
 
     paper = ""
+    layout = ""
     language = ""
     year = ""
     frontmatter = ""
@@ -303,6 +304,9 @@ if len(sys.argv) < 2: # No arguments are given
 
     while not (paper == "personal" or paper == "a5" or paper == "pocket"): # # Make sure a correct format is chosen
         paper = input("\n> What format should I use for your insert (pocket/personal/a5)? ")
+        
+    while not (layout == "w2p" or layout == "wp2n" or layout == "w1p"): # # Make sure a correct layout is chosen
+        layout = input("\n> What layout should I use for your insert (w1p/w2p/w2pn)? ")
 
     while not (language == "sv" or language == "en"): # # Make sure a correct language is chosen
         language = input("\n> What language should I use (sv/en)? ")
@@ -320,11 +324,12 @@ else: # Arguments are provided at launch
     match = False
     args = sys.argv[1].split("-")
     paper = args[0]
-    language = args[1]
-    year = int(args[2])
-    frontmatter = args[3]
-    backmatter = args[4]
-    dolatex = args[5]
+    layout = args[1]
+    language = args[2]
+    year = int(args[3])
+    frontmatter = args[4]
+    backmatter = args[5]
+    dolatex = args[6]
 
 # Set paper dimensions according to provided argument or choice  
   
@@ -360,7 +365,7 @@ if language == "en":
     saturday = "saturday"
     sunday = "sunday"
     av = "by"
-    notes = "notes"
+    notesden = "notes"
     titel = "for Filofax " + paper.title() + " Size"
 else:
     dayname = ["måndag","tisdag","onsdag","torsdag","fredag","lördag","söndag"]
@@ -370,7 +375,7 @@ else:
     saturday = "lördag"
     sunday = "söndag"
     av = "av"
-    notes = "anteckningar"
+    notesden = "anteckningar"
     titel = "för Filofax " + paper.title()
 
 # Read supplementary files
@@ -392,8 +397,13 @@ if frontmatter == "yes":
     filefrontmatter = readfile("frontmatter-" + str(year) + "-" + language + ".txt")
     if filefrontmatter != False:
         latex = latex + getmatter(filefrontmatter) + "\\pagebreak\n\n"
-        
-latex = latex + week1page()
+
+if layout == "w2p":
+    latex = latex + week2pages()
+elif layout == "w2pn":
+    latex = latex + week2pageswnotes()
+else:
+    latex = latex + week1page()
 
 if backmatter == "yes":
     filebackmatter = readfile("backmatter-" + str(year) + "-" + language + ".txt")
