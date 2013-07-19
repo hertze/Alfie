@@ -10,17 +10,19 @@ If you want to use the script “out of the box” you need the free Adobe Sourc
 
 This script needs a few arguments to run:
 
-1. The format you want (pocket/personal/a5)
+1. The format you want (pocket / personal / a5)
 
-2. The language you want (sv/en)
+2. The layout you want (w1p = week on one page with notes / w2p = week on two pages / w2pn = week on two pages with notes)
 
-3. The year you want
+3. The language you want (sv / en)
 
-4. Whether it should include a frontmatter (yes/no)
+4. The year you want
 
-5. Whether it should include a backmatter (yes/no)
+5. Whether it should include a frontmatter (yes / no)
 
-6. Whether it should try to typeset the resulting LaTeX file (yes/no)
+6. Whether it should include a backmatter (yes / no)
+
+7. Whether it should try to typeset the resulting LaTeX file (yes / no)
 
 If you launch the script without arguments, it will run with a minimal text interface, taking you through some questions:
 
