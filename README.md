@@ -34,7 +34,7 @@ If you run it with an argument, it will run *without* any interface whatsoever. 
 
 For example:
 
-> `python3 alfie.py personal-en-2014-no-no-yes`
+> `python3 alfie.py personal-w2p-en-2014-no-no-yes`
 
 will make a Swedish LaTeX diary for 2014 in personal size and then typeset it.
 
