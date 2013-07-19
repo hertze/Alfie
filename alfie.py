@@ -100,7 +100,7 @@ def notat(dagar): # Checks if there is a note for the current day
                 notat = line[1]
     return notat  
 
-def buildspreads(): # We build a week spread
+def week2pages(): # We build a week spread
     latex = ""
     vecka = []
     vecka = spliceyear(vecka)
@@ -303,7 +303,7 @@ if frontmatter == "yes":
     if filefrontmatter != False:
         latex = latex + getmatter(filefrontmatter) + "\\pagebreak\n\n"
         
-latex = latex + buildspreads()
+latex = latex + week2pages()
 
 if backmatter == "yes":
     filebackmatter = readfile("backmatter-" + str(year) + "-" + language + ".txt")
@@ -331,6 +331,7 @@ if len(sys.argv) < 2:
 if dolatex == "yes": # Shall it try to typeset the LaTeX file?
     os.system("xelatex diary-" + paper + "-" + str(year) + "-" + language + ".tex")
     print ("\nYour file has been typeset.")
+    os.system("open diary-" + paper + "-" + str(year) + "-" + language + ".pdf")
     
 if len(sys.argv) < 2: # Signing out
     print ("\n\nHave a nice day!")    
