@@ -238,23 +238,20 @@ else: # Arguments are provided at launch
 # Set paper dimensions according to provided argument or choice  
   
 if paper == "a5":
-    vspace = "38"
     paperheight = "212"
     paperwidth = "150"
     margin = "5.5"
     left = "12.5"
     top = "5.5"
-    bottom = "5"
+    bottom = "8"
 elif paper == "pocket":
-    vspace = "15.5"
     paperheight = "122"
     paperwidth = "83"
     margin = "5.5"
     left = "9.5"
     top = "5.5"
-    bottom = "5"
+    bottom = "5.5"
 else:
-    vspace = "28.5"
     paperheight = "173"
     paperwidth = "97"
     margin = "6"
