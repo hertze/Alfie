@@ -459,10 +459,10 @@ elif paper == "pocket":
 else:
     paperheight = "173"
     paperwidth = "97"
-    margin = "4"
-    left = "12"
-    top = "3"
-    bottom = "4"
+    margin = "3"
+    left = "11"
+    top = "2"
+    bottom = "6"
     
 # Set proper language according to argument or choice
 
