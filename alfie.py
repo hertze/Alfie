@@ -1,4 +1,5 @@
 #! /usr/bin/env python3.3
+# -*- coding: utf-8 -*-
 
 # A L F I E
 # version 1.4
