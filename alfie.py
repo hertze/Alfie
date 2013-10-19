@@ -101,6 +101,17 @@ def notat(dagar): # Checks if there is a note for the current day
                 notat = line[1]
     return notat
     
+def weekdots(day): # Assemble week dots according to day
+    if day == 1 or day == 5:
+        weekdots = "\\raggedleft "
+    else:
+        weekdots = "\\raggedright "
+    for x in range(0, day):
+        weekdots = weekdots + "\\tikzcircle{2pt}{fill=black}\\hspace{2pt}"
+    for x in range(day, 7):
+        weekdots = weekdots + "\\tikzcircle{2pt}{}\\hspace{2pt}"
+    return weekdots
+    
 def week1page(): # We build a week spread
     latex = ""
     vecka = []
@@ -276,7 +287,9 @@ def week4pages(): # We build a week spread
                         latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
                     else:
                         latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
-                latex = latex + "\\vspace{\stretch{1}}\\pagebreak\n\n"
+                latex = latex + "\\vspace{\stretch{1}}"
+                latex = latex + weekdots(1)
+                latex = latex + "\\pagebreak\n\n"
                         
             elif 0 < n < 3: # tuesday and wednesday
                 if n == 1:
@@ -293,7 +306,9 @@ def week4pages(): # We build a week spread
                     else:
                         latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries \\circled{" + str(dagar[2]) + "} \\normalfont\\normalsize\n\n"
                 if n == 2:
-                    latex = latex + "\\vspace{\stretch{1}}\\pagebreak\n\n"
+                    latex = latex + "\\vspace{\stretch{1}}"
+                    latex = latex + weekdots(3)
+                    latex = latex + "\\pagebreak\n\n"
                 else:
                     latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 
@@ -315,7 +330,9 @@ def week4pages(): # We build a week spread
                 if n < 4:
                     latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 4:
-                    latex = latex + "\\vspace{\stretch{1}}\\pagebreak\n\n"
+                    latex = latex + "\\vspace{\stretch{1}}"
+                    latex = latex + weekdots(5)
+                    latex = latex + "\\pagebreak\n\n"
                                 
             else:
                 if n == 5:
@@ -334,7 +351,9 @@ def week4pages(): # We build a week spread
                 if n < 6:
                     latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 6:
-                    latex = latex + "\\vspace{\stretch{1}}\\pagebreak\n\n"
+                    latex = latex + "\\vspace{\stretch{1}}"
+                    latex = latex + weekdots(7)
+                    latex = latex + "\\pagebreak\n\n"
             
              
                     
@@ -361,6 +380,7 @@ def preamble(): # This is the preamle
     latex = latex + "\geometry{paperwidth=" + paperwidth + "mm, paperheight=" + paperheight + "mm, margin=" + margin + "mm, bottom=" + bottom + "mm, top=" + top + "mm, left=" + left + "mm, nohead}\n\n"
     latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4.5mm,minimum width=4.5mm, line width=0.1pt] (char) {#1};}}\n\n"
     latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=black] (char) {#1};}}\n\n"
+    latex = latex + "\\newcommand{\\tikzcircle}[2]{\\tikz[baseline=-0.5ex]\draw[#2,radius=#1,ultra thin] (0,0) circle ;}%"
     latex = latex + "\\pagestyle{empty}\n\n"
     return latex
 
