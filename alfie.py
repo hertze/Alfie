@@ -101,6 +101,16 @@ def notat(dagar): # Checks if there is a note for the current day
                 notat = line[1]
     return notat
     
+def weeknotat(dennavecka): # Checks if there is a note for the current week
+    weeknotat = ""
+    if weeknotes != False:
+        for line in weeknotes:
+            line = line.split(": ")
+            if dennavecka == line[0]:
+                weeknotat = line[1]
+    return weeknotat
+
+    
 def weekdots(day): # Assemble week dots according to day
     if day == 1 or day == 5:
         weekdots = ""
@@ -372,6 +382,8 @@ def weekgold(): # We build a week spread
         
         for dagar in envecka:
             notattext = notat(dagar)
+            dennavecka = getvecka(dagar) # Save the current week number for later
+            weeknotattext = weeknotat(dennavecka)
             
             if n < 3: # Monday -- Wednesday
                 if n == 0:
@@ -450,9 +462,11 @@ def weekgold(): # We build a week spread
                 if n == 6:
                     latex = latex + "\\hfill \\Large\\bfseries " + rectoheader2 + " " + " \\normalfont\\normalsize\n\n"
                     latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
-                    latex = latex + "\\vspace{\stretch{1}}\\rule{2cm}{0.1pt}\n\n"
+                    if weeknotattext != "":
+                        latex = latex + weeknotattext + "\n\n"
+                    latex = latex + "\\vspace{\stretch{2}}\\vspace{3mm}\\rule{2cm}{0.1pt}\n\n"
                     latex = latex + "\\vspace{-2mm}" + gratitude + "\n\n"
-                    latex = latex + "\\vspace{\stretch{0.4}}\n\n"
+                    latex = latex + "\\vspace{\stretch{1}}\n\n"
                     latex = latex + "\\pagebreak\n\n"
                     
             n = n + 1
@@ -604,8 +618,12 @@ if holidays != False and len(sys.argv) < 2:
     print ("\n--> I've successfully loaded *holidays-" + str(year) + "-" + language + ".txt*.")
 
 notes = readfile("notes-" + str(year) + "-" + language +  ".txt")
-if holidays != False  and len(sys.argv) < 2:
+if notes != False and len(sys.argv) < 2:
     print ("\n--> I've successfully loaded *notes-" + str(year) + "-" + language +  ".txt*.")
+
+weeknotes = readfile("weeknotes-" + str(year) + "-" + language +  ".txt")
+if weeknotes != False and len(sys.argv) < 2:
+    print ("\n--> I've successfully loaded *weeknotes-" + str(year) + "-" + language +  ".txt*.")
 
 # Let's assemble the diary
 
