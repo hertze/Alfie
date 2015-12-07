@@ -464,7 +464,7 @@ def weekgold(): # We build a week spread
                     latex = latex + "\\vspace{-4.5mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                     if weeknotattext != "":
                         latex = latex + weeknotattext + "\n\n"
-                    latex = latex + "\\vspace{\stretch{2}}\\vspace{3mm}\\rule{2cm}{0.1pt}\n\n"
+                    latex = latex + "\\vspace{\stretch{3}}\\rule{2cm}{0.1pt}\n\n"
                     latex = latex + "\\vspace{-2mm}" + gratitude + "\n\n"
                     latex = latex + "\\vspace{\stretch{1}}\n\n"
                     latex = latex + "\\pagebreak\n\n"
@@ -486,7 +486,7 @@ def preamble(): # This is the preamle
     latex = latex + "\\usepackage{tikz}\n"
     latex = latex + "\\usepackage[bookmarks=true,pdfborder={0 0 0}]{hyperref}\n"
     latex = latex + "\\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}\n"
-    latex = latex + "\\usepackage[cross,a4,center,dvips,noinfo,landscape,odd]{crop}\n"
+    latex = latex + "\\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}\n"
     latex = latex + "\\defaultfontfeatures{Mapping=tex-text}\n"
     latex = latex + "\\setmainfont[BoldFont=Cronos Pro, ItalicFont=Cronos Pro Light Italic, BoldItalicFont=Cronos Pro Semibold, SmallCapsFont =Cronos Pro Light, SmallCapsFeatures={LetterSpace=1.15, Letters=SmallCaps}, Numbers={OldStyle, Proportional}, Scale=0.75 ] {Cronos Pro Light}\n"
     latex = latex + "\geometry{paperwidth=" + paperwidth + "mm, paperheight=" + paperheight + "mm, margin=" + margin + "mm, bottom=" + bottom + "mm, top=" + top + "mm, left=" + left + "mm, nohead}\n\n"
@@ -609,7 +609,7 @@ else:
     notesden = "anteckningar"
     theyear = "Året"
     titel = "för Filofax " + paper.title()
-    gratitude = "Vad har du varit tacksam över denna veckan?"
+    gratitude = "Vad har du känt tacksamhet över denna vecka?"
 
 # Read supplementary files
 
