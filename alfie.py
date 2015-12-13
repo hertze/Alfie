@@ -81,7 +81,7 @@ def getheader(envecka): # Builds the date header for each page
         header = month + " " + year
     return str(header)
     
-def holiday(dagar): # Are this day a holiday?
+def holiday(dagar): # Is this day a holiday?
     if str(dagar[3]) == saturday or str(dagar[3]) == sunday:
         return True
     else:
@@ -101,11 +101,21 @@ def notat(dagar): # Checks if there is a note for the current day
                 notat = line[1]
     return notat
     
+def weeknotat(dennavecka): # Checks if there is a note for the current week
+    weeknotat = ""
+    if weeknotes != False:
+        for line in weeknotes:
+            line = line.split(": ")
+            if dennavecka == line[0]:
+                weeknotat = line[1]
+    return weeknotat
+
+    
 def weekdots(day): # Assemble week dots according to day
     if day == 1 or day == 5:
-        weekdots = "\\raggedleft "
+        weekdots = ""
     else:
-        weekdots = "\\raggedright "
+        weekdots = ""
     for x in range(0, day):
         weekdots = weekdots + "\\tikzcircle{2pt}{fill=black}\\hspace{2pt}"
     for x in range(day, 7):
@@ -183,7 +193,7 @@ def week2pages(): # We build a week spread
             else:
                 if n == 3:
                     latex = latex + "\\hfill \\Large\\bfseries " + rectoheader + " " + " \\normalfont\\normalsize\n\n"
-                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
+                    latex = latex + "\\vspace{-4.5mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                 if holiday(dagar):
                     if notattext != "":
                         latex = latex + "\\mbox{\\small " + str(notattext) + "} \\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
@@ -237,7 +247,7 @@ def week2pageswf(): # We build a week spread
             else:
                 if n == 3:
                     latex = latex + "\\hfill \\Large\\bfseries " + rectoheader + " " + " \\normalfont\\normalsize\n\n"
-                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
+                    latex = latex + "\\vspace{-4.5mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                 if holiday(dagar):
                     if notattext != "":
                         latex = latex + "\\mbox{\\small " + str(notattext) + "} \\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
@@ -288,13 +298,13 @@ def week4pages(): # We build a week spread
                     else:
                         latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
                 latex = latex + "\\vspace{\stretch{1}}"
-                latex = latex + weekdots(1)
+                latex = latex + "\\hfill" + weekdots(1)
                 latex = latex + "\\pagebreak\n\n"
                         
             elif 0 < n < 3: # tuesday and wednesday
                 if n == 1:
                     latex = latex + "\\hfill \\Large\\bfseries " + rectoheader1 + " " + " \\normalfont\\normalsize\n\n"
-                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
+                    latex = latex + "\\vspace{-4.5mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                 if holiday(dagar):
                     if notattext != "":
                         latex = latex + "\\mbox{\\small " + str(notattext) + "} \\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
@@ -331,13 +341,13 @@ def week4pages(): # We build a week spread
                     latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 4:
                     latex = latex + "\\vspace{\stretch{1}}"
-                    latex = latex + weekdots(5)
+                    latex = latex + "\\hfill" + weekdots(5)
                     latex = latex + "\\pagebreak\n\n"
                                 
             else:
                 if n == 5:
                     latex = latex + "\\hfill \\Large\\bfseries " + rectoheader2 + " " + " \\normalfont\\normalsize\n\n"
-                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
+                    latex = latex + "\\vspace{-4.5mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                 if holiday(dagar):
                     if notattext != "":
                         latex = latex + "\\mbox{\\small " + str(notattext) + "} \\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
@@ -354,12 +364,114 @@ def week4pages(): # We build a week spread
                     latex = latex + "\\vspace{\stretch{1}}"
                     latex = latex + weekdots(7)
                     latex = latex + "\\pagebreak\n\n"
-            
-             
                     
             n = n + 1
     return latex
     
+def weekgold(): # We build a week spread
+    latex = ""
+    vecka = []
+    vecka = spliceyear(vecka)
+    vecka = purge(vecka)
+    for envecka in vecka:
+        n = 0
+        versoheader1 = getheader(envecka[0:2])
+        rectoheader1 = getheader(envecka[3:4])
+        versoheader2 = getheader(envecka[5:7])
+        rectoheader2 = getheader(envecka[5:7])
+        
+        for dagar in envecka:
+            notattext = notat(dagar)
+            dennavecka = getvecka(dagar) # Save the current week number for later
+            weeknotattext = weeknotat(dennavecka)
+            
+            if n < 3: # Monday -- Wednesday
+                if n == 0:
+                    latex = latex + "\\Large\\bfseries " + versoheader1 + " " + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
+                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
+                
+                if n > 0:  # Inget mellanrum före måndagen, ju.  
+                    latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
+                
+                if holiday(dagar):
+                    if notattext != "":
+                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
+                    else:
+                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"      
+                else:
+                    if notattext != "":
+                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
+                    else:
+                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
+                if n == 2:
+                    latex = latex + "\\vspace{\stretch{1}}"
+                    latex = latex + weekdots(3)
+                    latex = latex + "\\pagebreak\n\n"
+                        
+            elif 2 < n < 5: # Thursday and Friday
+                if n == 3:
+                    latex = latex + "\\hfill \\Large\\bfseries " + rectoheader1 + " " + " \\normalfont\\normalsize\n\n"
+                    latex = latex + "\\vspace{-4.5mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
+                    
+                if holiday(dagar):
+                    if notattext != "":
+                        latex = latex + "\\mbox{\\small " + str(notattext) + "} \\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
+                    else:
+                        latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\n\n"
+                else:
+                    if notattext != "":
+                        latex = latex + "\\mbox{\\small " + str(notattext) + "} \\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries \\circled{" + str(dagar[2]) + "} \\normalfont\\normalsize\n\n"
+                    else:
+                        latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries \\circled{" + str(dagar[2]) + "} \\normalfont\\normalsize\n\n"
+                if n == 2:
+                    latex = latex + "\\vspace{\stretch{1}}"
+                    latex = latex + weekdots(3)
+                    latex = latex + "\\pagebreak\n\n"
+                else:
+                    latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
+                if n == 4:
+                    latex = latex + "\\footnotesize \\ding{93} \n\n"
+                    latex = latex + "\\vspace{\stretch{1}}"
+                    latex = latex + "\\hfill" + weekdots(5)
+                    latex = latex + "\\pagebreak\n\n"
+                
+            else: # Saturday and Sunday
+                
+                if n == 5:
+                    latex = latex + "\\Large\\bfseries " + versoheader2 + " " + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
+                    latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
+                    
+                if holiday(dagar):
+                    if notattext != "":
+                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
+                    else:
+                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \n\n"      
+                else:
+                    if notattext != "":
+                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
+                    else:
+                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
+                if n < 7:
+                    latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
+                if n == 6:
+                    latex = latex + "\\hfill \\footnotesize \\ding{93} \n\n"
+                    latex = latex + "\\vspace{\stretch{1}}"
+                    latex = latex + weekdots(7)
+                    latex = latex + "\\pagebreak\n\n"
+                    
+                if n == 6:
+                    latex = latex + "\\hfill \\Large\\bfseries " + rectoheader2 + " " + " \\normalfont\\normalsize\n\n"
+                    latex = latex + "\\vspace{-4.5mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
+                    if weeknotattext != "":
+                        latex = latex + weeknotattext + "\n\n"
+                    latex = latex + "\\vspace{\stretch{3}}\\rule{2cm}{0.1pt}\n\n"
+                    latex = latex + "\\vspace{-2mm}" + gratitude + "\n\n"
+                    latex = latex + "\\vspace{\stretch{1}}\n\n"
+                    latex = latex + "\\pagebreak\n\n"
+                    
+            n = n + 1
+    return latex 
+ 
     
 def preamble(): # This is the preamle
     latex = ""
@@ -372,9 +484,10 @@ def preamble(): # This is the preamle
     latex = latex + "\\usepackage{graphicx}\n"
     latex = latex + "\\usepackage{parskip}\n"
     latex = latex + "\\usepackage{tikz}\n"
+    latex = latex + "\\usepackage{pifont}\n"
     latex = latex + "\\usepackage[bookmarks=true,pdfborder={0 0 0}]{hyperref}\n"
     latex = latex + "\\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}\n"
-    latex = latex + "\\usepackage[cross,a4,center,dvips,noinfo,landscape,odd]{crop}\n"
+    latex = latex + "\\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}\n"
     latex = latex + "\\defaultfontfeatures{Mapping=tex-text}\n"
     latex = latex + "\\setmainfont[BoldFont=Cronos Pro, ItalicFont=Cronos Pro Light Italic, BoldItalicFont=Cronos Pro Semibold, SmallCapsFont =Cronos Pro Light, SmallCapsFeatures={LetterSpace=1.15, Letters=SmallCaps}, Numbers={OldStyle, Proportional}, Scale=0.75 ] {Cronos Pro Light}\n"
     latex = latex + "\geometry{paperwidth=" + paperwidth + "mm, paperheight=" + paperheight + "mm, margin=" + margin + "mm, bottom=" + bottom + "mm, top=" + top + "mm, left=" + left + "mm, nohead}\n\n"
@@ -422,8 +535,8 @@ if len(sys.argv) < 2: # No arguments are given
     while not (paper == "personal" or paper == "a5" or paper == "pocket"): # # Make sure a correct format is chosen
         paper = input("\n> What format should I use for your insert (pocket/personal/a5)? ")
         
-    while not (layout == "w2p" or layout == "w1p" or layout == "w2pwf" or layout =="w4p"): # # Make sure a correct layout is chosen
-        layout = input("\n> What layout should I use for your insert (w1p/w2p/w2pwf/w4p)? ")
+    while not (layout == "w2p" or layout == "w1p" or layout == "w2pwf" or layout =="w4p" or layout =="wg"): # # Make sure a correct layout is chosen
+        layout = input("\n> What layout should I use for your insert (w1p/w2p/w2pwf/w4p/wg)? ")
 
     while not (language == "sv" or language == "en"): # # Make sure a correct language is chosen
         language = input("\n> What language should I use (sv/en)? ")
@@ -470,7 +583,7 @@ else:
     margin = "3"
     left = "11"
     top = "2"
-    bottom = "6"
+    bottom = "3.5"
     
 # Set proper language according to argument or choice
 
@@ -485,6 +598,7 @@ if language == "en":
     notesden = "notes"
     theyear = "The Year"
     titel = "for Filofax " + paper.title() + " Size"
+    gratitude = "What have you felt grateful for this week?"
 else:
     dayname = ["måndag","tisdag","onsdag","torsdag","fredag","lördag","söndag"]
     monthname = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"]
@@ -496,6 +610,7 @@ else:
     notesden = "anteckningar"
     theyear = "Året"
     titel = "för Filofax " + paper.title()
+    gratitude = "Vad har du känt tacksamhet över denna vecka?"
 
 # Read supplementary files
 
@@ -504,8 +619,12 @@ if holidays != False and len(sys.argv) < 2:
     print ("\n--> I've successfully loaded *holidays-" + str(year) + "-" + language + ".txt*.")
 
 notes = readfile("notes-" + str(year) + "-" + language +  ".txt")
-if holidays != False  and len(sys.argv) < 2:
+if notes != False and len(sys.argv) < 2:
     print ("\n--> I've successfully loaded *notes-" + str(year) + "-" + language +  ".txt*.")
+
+weeknotes = readfile("weeknotes-" + str(year) + "-" + language +  ".txt")
+if weeknotes != False and len(sys.argv) < 2:
+    print ("\n--> I've successfully loaded *weeknotes-" + str(year) + "-" + language +  ".txt*.")
 
 # Let's assemble the diary
 
@@ -523,6 +642,8 @@ elif layout == "w2pwf":
     latex = latex + week2pageswf()
 elif layout == "w4p":
     latex = latex + week4pages()
+elif layout == "wg":
+    latex = latex + weekgold()
 else:
     latex = latex + week1page()
 
