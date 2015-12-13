@@ -430,7 +430,7 @@ def weekgold(): # We build a week spread
                 else:
                     latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 4:
-                    latex = latex + "\\small " + notesden + " \n\n"
+                    latex = latex + "\\footnotesize \\ding{93} \n\n"
                     latex = latex + "\\vspace{\stretch{1}}"
                     latex = latex + "\\hfill" + weekdots(5)
                     latex = latex + "\\pagebreak\n\n"
@@ -454,7 +454,7 @@ def weekgold(): # We build a week spread
                 if n < 7:
                     latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                 if n == 6:
-                    latex = latex + "\\hfill \\small " + notesden + "\n\n"
+                    latex = latex + "\\hfill \\footnotesize \\ding{93} \n\n"
                     latex = latex + "\\vspace{\stretch{1}}"
                     latex = latex + weekdots(7)
                     latex = latex + "\\pagebreak\n\n"
@@ -484,6 +484,7 @@ def preamble(): # This is the preamle
     latex = latex + "\\usepackage{graphicx}\n"
     latex = latex + "\\usepackage{parskip}\n"
     latex = latex + "\\usepackage{tikz}\n"
+    latex = latex + "\\usepackage{pifont}\n"
     latex = latex + "\\usepackage[bookmarks=true,pdfborder={0 0 0}]{hyperref}\n"
     latex = latex + "\\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}\n"
     latex = latex + "\\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}\n"
@@ -582,7 +583,7 @@ else:
     margin = "3"
     left = "11"
     top = "2"
-    bottom = "6"
+    bottom = "3.5"
     
 # Set proper language according to argument or choice
 
