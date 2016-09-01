@@ -538,8 +538,8 @@ if len(sys.argv) < 2: # No arguments are given
     while not (layout == "w2p" or layout == "w1p" or layout == "w2pwf" or layout =="w4p" or layout =="wg"): # # Make sure a correct layout is chosen
         layout = input("\n> What layout should I use for your insert (w1p/w2p/w2pwf/w4p/wg)? ")
 
-    while not (language == "sv" or language == "en"): # # Make sure a correct language is chosen
-        language = input("\n> What language should I use (sv/en)? ")
+    while not (language == "sv" or language == "de" or language == "en"): # # Make sure a correct language is chosen
+        language = input("\n> What language should I use (sv/de/en)? ")
     
     while not match: # # Make sure it's a valid yesr
         year = int(input("\n> What year do you need (YYYY)? "))
@@ -599,6 +599,18 @@ if language == "en":
     theyear = "The Year"
     titel = "for Filofax " + paper.title() + " Size"
     gratitude = "What have you felt grateful for this week?"
+elif language == "de":
+    dayname = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"]
+    monthname = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"]
+    thisweek = "Diese Woche"
+    currweek = "Woche"
+    saturday = "Samstag"
+    sunday = "Sonntag"
+    av = "von"
+    notesden = "Notizen"
+    theyear = "Das Jahr"
+    titel = "für Filofax " + paper.title() + " Size"
+    gratitude = "Wofür warst Du diese Woche dankbar?"
 else:
     dayname = ["måndag","tisdag","onsdag","torsdag","fredag","lördag","söndag"]
     monthname = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"]
