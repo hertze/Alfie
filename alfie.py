@@ -1,4 +1,4 @@
-#! /usr/bin/env python3.3
+#! /usr/bin/env python3.5
 # -*- coding: utf-8 -*-
 
 # A L F I E
@@ -494,7 +494,7 @@ def preamble(): # This is the preamle
     latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4.5mm,minimum width=4.5mm, line width=0.1pt] (char) {#1};}}\n\n"
     latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=black] (char) {#1};}}\n\n"
     latex = latex + "\\newcommand{\\tikzcircle}[2]{\\tikz[baseline=-0.5ex]\draw[#2,radius=#1,ultra thin] (0,0) circle ;}%"
-    latex = latex + "\\pagestyle{empty}\n\n"
+    latex = latex + "\pagenumbering{gobble}\n\n"
     return latex
 
 def opening(): # This is the opening part of the LaTeX document
