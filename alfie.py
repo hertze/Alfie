@@ -517,16 +517,16 @@ def onedaytwopages(): # We build a week spread
                 latex = latex + "\\vspace{5mm}\n\n"
                 
                 
-                latex = latex + "\hspace{0.5mm}\\rule{0.67\\textwidth}{0.4pt}"
+                latex = latex + "\hspace{0.5mm}\\rule{0.67\\textwidth}{0.1pt}"
                 
                 for t in range(8,19): #Prints time
             
                     latex = latex + "\\vspace{-7pt}\n\n"
                     latex = latex + "\hspace{1pt}\\small " + str(format(t, '02d')) + "\n\n"
                     latex = latex + "\\vspace{-9pt}\n\n"
-                    latex = latex + "\hspace{1pt}\\rule{5pt}{0.4pt}\n\n"
+                    latex = latex + "\hspace{1pt}\\rule{5pt}{0.1pt}\n\n"
                     latex = latex + "\\vspace{0pt}\n\n"
-                    latex = latex + "\hspace{1pt}\\rule{0.67\\textwidth}{0.4pt}\n\n"
+                    latex = latex + "\hspace{1pt}\\rule{0.67\\textwidth}{0.1pt}\n\n"
                     
                 latex = latex + "\\pagebreak\n\n"  
                 latex = latex + "\\Large\\bfseries " + versoheader + " " + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
