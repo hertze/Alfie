@@ -515,14 +515,13 @@ def onedaytwopages(): # We build a week spread
                         latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
                 
                 latex = latex + "\\vspace{5mm}\n\n"
-                
-                
                 latex = latex + "\hspace{0.5mm}\\rule{0.67\\textwidth}{0.1pt}"
                 
-                for t in range(8,19): #Prints time
+                for t in range(8,19): # Prints time
             
                     latex = latex + "\\vspace{-7pt}\n\n"
-                    latex = latex + "\hspace{1pt}\\small " + str(format(t, '02d')) + "\n\n"
+                    #latex = latex + "\hspace{1pt}\\small \\bfseries " + str(format(t, '02d')) + ":\n\n"
+                    latex = latex + "\hspace{1pt}\\small \\bfseries " + str(t) + ":\n\n" # Utan ledande nolla
                     latex = latex + "\\vspace{-9pt}\n\n"
                     latex = latex + "\hspace{1pt}\\rule{5pt}{0.1pt}\n\n"
                     latex = latex + "\\vspace{0pt}\n\n"
@@ -554,11 +553,22 @@ def onedaytwopages(): # We build a week spread
                         latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
                     else:
                         latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
+                
+                latex = latex + "\\vspace{5mm}\n\n"
+                latex = latex + "\hspace{0.5mm}\\rule{0.67\\textwidth}{0.1pt}"
+                for t in range(1,4): # Prints time
+                    latex = latex + "\\vspace{0pt}\n\n"
+                    latex = latex + "\hspace{1pt}\\rule{5pt}{0.1pt}\n\n"
+                    latex = latex + "\\vspace{0pt}\n\n"
+                    latex = latex + "\hspace{1pt}\\rule{0.67\\textwidth}{0.1pt}\n\n"
+                        
+                
                 if n < 6:
                     latex = latex + "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
                     latex = latex + "\\vspace{2mm}\n\n"
                 if n == 6:
                     latex = latex + "\\vspace{\stretch{1}}"
+                    latex = latex + "\\phantom{buuu}\n\n" # Hack för att låta söndagen ta mer plats i vertikalled
                     latex = latex + "\\pagebreak\n\n"
                     
                 if n == 6:
