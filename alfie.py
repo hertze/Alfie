@@ -498,21 +498,19 @@ def onedaytwopages(): # We build a week spread
                 versoheader = getheadersingle(envecka[n:6])
                 
                 latex = latex + "\\Large\\bfseries " + versoheader + " " + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
-                
                 latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
-                
                 latex = latex + "\\vspace{2mm}\n\n"
                 
                 if holiday(dagar):
                     if notattext != "":
-                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
+                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize {\\bfseries " + str(dagar[3]) + "}\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
                     else:
-                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
+                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize {\\bfseries " + str(dagar[3]) + "}\n\n"
                 else:
                     if notattext != "":
-                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
+                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize {\\bfseries " + str(dagar[3]) + "}\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
                     else:
-                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
+                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize {\\bfseries " + str(dagar[3]) + "}\n\n"
                 
                 latex = latex + "\\vspace{5mm}\n\n"
                 latex = latex + "\hspace{0.5mm}\\rule{0.67\\textwidth}{0.1pt}"
@@ -527,7 +525,8 @@ def onedaytwopages(): # We build a week spread
                     latex = latex + "\\vspace{0pt}\n\n"
                     latex = latex + "\hspace{1pt}\\rule{0.67\\textwidth}{0.1pt}\n\n"
                     
-                latex = latex + "\\pagebreak\n\n"  
+                latex = latex + "\\pagebreak\n\n" 
+                
                 latex = latex + "\\Large\\bfseries " + versoheader + " " + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
                 latex = latex + "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                 latex = latex + "\\vspace{\stretch{1}}"
@@ -545,14 +544,14 @@ def onedaytwopages(): # We build a week spread
                     
                 if holiday(dagar):
                     if notattext != "":
-                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
+                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize {\\bfseries " + str(dagar[3]) + "}\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
                     else:
-                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \n\n"      
+                        latex = latex + "\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize {\\bfseries " + str(dagar[3]) + "}\\hfill \n\n"      
                 else:
                     if notattext != "":
-                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
+                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\bfseries\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
                     else:
-                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
+                        latex = latex + "\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\bfseries\\normalsize " + str(dagar[3]) + "\n\n"
                 
                 latex = latex + "\\vspace{5mm}\n\n"
                 latex = latex + "\hspace{0.5mm}\\rule{0.67\\textwidth}{0.1pt}"
@@ -572,7 +571,8 @@ def onedaytwopages(): # We build a week spread
                     latex = latex + "\\pagebreak\n\n"
                     
                 if n == 6:
-                    latex = latex + "\\hfill \\Large\\bfseries " + versoheader + " " + " \\normalfont\\normalsize\n\n"
+                    #latex = latex + "\\normalfont\\small " + currweek + " " + getvecka(dagar) + "\\hfill \\Large\\bfseries " + versoheader + " \n\n"
+                    latex = latex + "\\Large\\bfseries " + versoheader + " " + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
                     latex = latex + "\\vspace{-4.5mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
                     if weeknotattext != "":
                         latex = latex + "\\vspace{2mm}\n\n"
@@ -603,7 +603,7 @@ def preamble(): # This is the preamle
     latex = latex + "\\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}\n"
     latex = latex + "\\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}\n"
     latex = latex + "\\defaultfontfeatures{Mapping=tex-text}\n"
-    latex = latex + "\\setmainfont[BoldFont=Cronos Pro, ItalicFont=Cronos Pro Light Italic, BoldItalicFont=Cronos Pro Semibold, SmallCapsFont =Cronos Pro Light, SmallCapsFeatures={LetterSpace=1.15, Letters=SmallCaps}, Numbers={OldStyle, Proportional}, Scale=0.75 ] {Cronos Pro Light}\n"
+    latex = latex + "\\setmainfont[BoldFont=Cronos Pro, ItalicFont=Cronos Pro Light Italic, BoldItalicFont=Cronos Pro Semibold, SlantedFont=Cronos Pro Bold, SmallCapsFont =Cronos Pro Light, SmallCapsFeatures={LetterSpace=1.15, Letters=SmallCaps}, Numbers={OldStyle, Proportional}, Scale=0.75 ] {Cronos Pro Light}\n"
     latex = latex + "\geometry{paperwidth=" + paperwidth + "mm, paperheight=" + paperheight + "mm, margin=" + margin + "mm, bottom=" + bottom + "mm, top=" + top + "mm, left=" + left + "mm, nohead}\n\n"
     latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4.5mm,minimum width=4.5mm, line width=0.1pt] (char) {#1};}}\n\n"
     latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=black] (char) {#1};}}\n\n"
