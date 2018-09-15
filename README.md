@@ -10,9 +10,9 @@ If you want to use the script “out of the box” you need the free Adobe Sourc
 
 This script needs a few arguments to run:
 
-1. The format you want (pocket / personal / a5)
+1. The format you want (pocket / personal / a6 / a5)
 
-2. The layout you want (w1p = week on one page with notes / w2p = week on two pages / w2pn = week on two pages with notes / w2pwf = week on two pages with emphasis on weekdays / w4p = week on four pages, with dot indicators / wg = week on four pages with room for notes)
+2. The layout you want (w1p = week on one page with notes / w2p = week on two pages / w2pwf = week on two pages with emphasis on weekdays / w4p = week on four pages, with dot indicators / wg = week on four pages with room for notes / 1d2p = day on two pages with notes)
 
 3. The language you want (sv / de / en)
 

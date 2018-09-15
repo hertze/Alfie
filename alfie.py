@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # A L F I E
-# version 1.4
+# version 1.5
 #
 # by Joakim Hertze
 
@@ -529,6 +529,12 @@ def onedaytwopages(): # We build a week spread
                         latex = latex + "\hspace{1pt}\\small \\bfseries " + str(t) + ":\n\n" # Utan ledande nolla
                         latex = latex + "\\vspace{-7pt}\n\n"
                         latex = latex + "\hspace{1pt}\\rule{0.67\\textwidth}{0.1pt}\n\n"
+                elif paper == "a6":
+                    for t in range(8,19): # Prints time
+                        latex = latex + "\\vspace{-1.5pt}\n\n"
+                        latex = latex + "\hspace{1pt}\\small \\bfseries " + str(t) + ":\n\n" # Utan ledande nolla
+                        latex = latex + "\\vspace{-2.5pt}\n\n"
+                        latex = latex + "\hspace{1pt}\\rule{0.67\\textwidth}{0.1pt}\n\n"
                 else:
                     for t in range(8,19): # Prints time
                         latex = latex + "\\vspace{-7pt}\n\n"
@@ -744,7 +750,7 @@ if language == "en":
     av = "by"
     notesden = "notes"
     theyear = "The Year"
-    titel = "for Filofax " + paper.title() + " Size"
+    titel = "for " + paper.title() + " Size"
     gratitude = "What have you felt grateful for this week?"
 elif language == "de":
     dayname = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"]
@@ -756,7 +762,7 @@ elif language == "de":
     av = "von"
     notesden = "Notizen"
     theyear = "Das Jahr"
-    titel = "für Filofax " + paper.title() + " Size"
+    titel = "für " + paper.title() + " Size"
     gratitude = "Wofür warst Du diese Woche dankbar?"
 else:
     dayname = ["måndag","tisdag","onsdag","torsdag","fredag","lördag","söndag"]
@@ -768,7 +774,7 @@ else:
     av = "av"
     notesden = "anteckningar"
     theyear = "Året"
-    titel = "för Filofax " + paper.title()
+    titel = "för " + paper.title()
     gratitude = "Vad har du känt tacksamhet över denna vecka?"
 
 # Read supplementary files
