@@ -672,8 +672,8 @@ if len(sys.argv) < 2: # No arguments are given
     match = False
     dolatex = ""
 
-    while not (paper == "personal" or paper == "a5" or paper == "pocket"): # # Make sure a correct format is chosen
-        paper = input("\n> What format should I use for your insert (pocket/personal/a5)? ")
+    while not (paper == "personal" or paper == "a5" or paper == "a6"or paper == "pocket"): # # Make sure a correct format is chosen
+        paper = input("\n> What format should I use for your insert (pocket/personal/a5/a6)? ")
         
     while not (layout == "w2p" or layout == "w1p" or layout == "w2pwf" or layout =="w4p" or layout =="wg" or layout =="1d2p"): # # Make sure a correct layout is chosen
         layout = input("\n> What layout should I use for your insert (w1p/w2p/w2pwf/w4p/wg/1d2p)? ")
@@ -710,6 +710,13 @@ if paper == "a5":
     left = "12.5"
     top = "5.5"
     bottom = "10"
+elif paper == "a6":
+    paperheight = "150"
+    paperwidth = "107"
+    margin = "4"
+    left = "13"
+    top = "2"
+    bottom = "3.5"
 elif paper == "pocket":
     paperheight = "122"
     paperwidth = "83"
