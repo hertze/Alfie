@@ -618,6 +618,68 @@ def onedaytwopages(): # We build a week spread
             n = n + 1
     return latex
  
+def week2pagesmargins(): # We build a week spread
+    latex = ""
+    vecka = []
+    vecka = spliceyear(vecka)
+    vecka = purge(vecka)
+    latex= latex + "\\newlength{\\diarywidth}\n\n"
+    latex = latex + "\\setlength{\\diarywidth}{0.6\\textwidth}\n\n"
+    latex= latex + "\\newlength{\\marginwidth}\n\n"
+    latex = latex + "\\setlength{\\marginwidth}{0.4\\textwidth}\n\n"
+    latex= latex + "\\newlength{\\bottommargin}\n\n"
+    latex = latex + "\\setlength{\\bottommargin}{0.3\\textheight}\n\n"
+    for envecka in vecka:
+        n = 0
+        versoheader = getheader(envecka[0:3])
+        rectoheader = getheader(envecka[3:7])
+    
+        
+        for dagar in envecka:
+            notattext = notat(dagar)
+            if n < 3: # måndag -- onsdag
+                if n == 0:
+                    latex = latex + "\\hspace{\\marginwidth}\\Large\\bfseries " + versoheader + " " + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
+                    latex = latex + "\\vspace{-4mm}\\hspace{\\marginwidth}\\rule{\\diarywidth}{0.4pt}\\vspace{-2mm}\n\n"
+                    latex = latex + "\\hspace{\\marginwidth}\\normalsize " + thisweek + "\n\n"
+                    latex = latex + "\\vspace{\stretch{0.2}}\\hspace{\\marginwidth}\\rule{\\diarywidth}{0.1pt}\\vspace{-2mm}\n\n"
+                if holiday(dagar):
+                    if notattext != "":
+                        latex = latex + "\\hspace{\\marginwidth}\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
+                    else:
+                        latex = latex + "\\hspace{\\marginwidth}\\large\\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
+                else:
+                    if notattext != "":
+                        latex = latex + "\\hspace{\\marginwidth}\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\\hfill \\mbox{\\small " +  str(notattext) + "}\n\n"
+                    else:
+                        latex = latex + "\\hspace{\\marginwidth}\\large\\bfseries \\circled{" + str(dagar[2]) + "} \\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3]) + "\n\n"
+                
+                if n < 2:
+                    latex = latex + "\\vspace{\stretch{1}}\\hspace{\\marginwidth}\\rule{\\diarywidth}{0.1pt}\\vspace{-2mm}\n\n"
+                if n == 2:
+                    latex = latex + "\\vspace{\stretch{1}}\\hspace{\\marginwidth}\\rule{\\diarywidth}{0.1pt}\\vspace{\\bottommargin}\\pagebreak\n\n"            
+            else:
+                if n == 3:
+                    latex = latex + "\\hfill \\Large\\bfseries " + rectoheader + " " + " \\normalfont\\normalsize\\hspace{0.4\\textwidth}\n\n"
+                    latex = latex + "\\vspace{-4.5mm}\\rule{\\diarywidth}{0.4pt}\\vspace{-2mm}\n\n"
+                if holiday(dagar):
+                    if notattext != "":
+                        latex = latex + "\\mbox{\\small " + str(notattext) + "} \\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\\hspace{\\marginwidth}\\hspace{-0.7mm}\n\n"
+                    else:
+                        latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries\\itshape \\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} \\normalfont\\normalsize\\hspace{\\marginwidth}\\hspace{-0.7mm}\n\n"
+                else:
+                    if notattext != "":
+                        latex = latex + "\\mbox{\\small " + str(notattext) + "} \\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries \\circled{" + str(dagar[2]) + "} \\normalfont\\normalsize\\hspace{\\marginwidth}\\hspace{-0.7mm}\n\n"
+                    else:
+                        latex = latex + "\\hfill " + str(dagar[3]) + " \\hspace{0mm} \\large \\bfseries \\circled{" + str(dagar[2]) + "} \\normalfont\\normalsize\\hspace{\\marginwidth}\\hspace{-0.7mm}\n\n"
+                if n < 5:
+                    latex = latex + "\\vspace{\stretch{1}}\\rule{\\diarywidth}{0.1pt}\\vspace{-2mm}\n\n"
+                if n == 5:
+                    latex = latex + "\\vspace{\stretch{0.6}}\\rule{\\diarywidth}{0.1pt}\\vspace{-2mm}\n\n"
+                if n == 6:
+                    latex = latex + "\\vspace{\stretch{0.6}}\\rule{\\diarywidth}{0.1pt}\\vspace{\\bottommargin}\\pagebreak\n\n"  
+            n = n + 1
+    return latex
     
 def preamble(): # This is the preamle
     latex = ""
@@ -639,8 +701,8 @@ def preamble(): # This is the preamle
     latex = latex + "\geometry{paperwidth=" + paperwidth + "mm, paperheight=" + paperheight + "mm, margin=" + margin + "mm, bottom=" + bottom + "mm, top=" + top + "mm, left=" + left + "mm, nohead}\n\n"
     latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4.5mm,minimum width=4.5mm, line width=0.1pt] (char) {#1};}}\n\n"
     latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=black] (char) {#1};}}\n\n"
-    latex = latex + "\\newcommand{\\tikzcircle}[2]{\\tikz[baseline=-0.5ex]\draw[#2,radius=#1,ultra thin] (0,0) circle ;}%"
-    latex = latex + "\pagenumbering{gobble}\n\n"
+    latex = latex + "\\newcommand{\\tikzcircle}[2]{\\tikz[baseline=-0.5ex]\draw[#2,radius=#1,ultra thin] (0,0) circle ;}\n\n"
+    latex = latex + "\\pagenumbering{gobble}\n\n"
     return latex
 
 def opening(): # This is the opening part of the LaTeX document
@@ -681,8 +743,8 @@ if len(sys.argv) < 2: # No arguments are given
     while not (paper == "personal" or paper == "a5" or paper == "a6"or paper == "pocket"): # # Make sure a correct format is chosen
         paper = input("\n> What format should I use for your insert (pocket/personal/a5/a6)? ")
         
-    while not (layout == "w2p" or layout == "w1p" or layout == "w2pwf" or layout =="w4p" or layout =="wg" or layout =="1d2p"): # # Make sure a correct layout is chosen
-        layout = input("\n> What layout should I use for your insert (w1p/w2p/w2pwf/w4p/wg/1d2p)? ")
+    while not (layout == "w2p" or layout == "w1p" or layout == "w2pwf" or layout =="w4p" or layout =="wg" or layout =="1d2p" or layout =="w2pmargins"): # # Make sure a correct layout is chosen
+        layout = input("\n> What layout should I use for your insert (w1p/w2p/w2pwf/w4p/wg/1d2p/w2pmargins)? ")
 
     while not (language == "sv" or language == "de" or language == "en"): # # Make sure a correct language is chosen
         language = input("\n> What language should I use (sv/de/en)? ")
@@ -713,7 +775,7 @@ if paper == "a5":
     paperheight = "212"
     paperwidth = "150"
     margin = "5.5"
-    left = "12.5"
+    left = "13.5"
     top = "5.5"
     bottom = "10"
 elif paper == "a6":
@@ -811,6 +873,8 @@ elif layout == "wg":
     latex = latex + weekgold()
 elif layout == "1d2p":
     latex = latex + onedaytwopages()
+elif layout == "w2pmargins":
+    latex = latex + week2pagesmargins()
 else:
     latex = latex + week1page()
 
