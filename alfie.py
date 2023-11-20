@@ -788,10 +788,10 @@ elif paper == "a6":
 elif paper == "pocket":
     paperheight = "122"
     paperwidth = "83"
-    margin = "4"
-    left = "9.5"
-    top = "3"
-    bottom = "4"
+    margin = "2"
+    left = "12"
+    top = "2"
+    bottom = "6"
 else:
     paperheight = "173"
     paperwidth = "97"
