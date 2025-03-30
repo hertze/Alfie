@@ -1,4 +1,4 @@
-#! /usr/bin/env python3.5
+#! /usr/bin/env python3.10
 # -*- coding: utf-8 -*-
 
 # A L F I E
@@ -21,7 +21,7 @@ def readfile(name): # Reads a file and makes it into a list line by line
         for i in f:
             n.append(i)
         return n
-    except:
+    except Exception:
         if len(sys.argv) < 2: # Only feedback is script is run without arguments
             print ("\n--> I cannot load " + name + ", but I'll probably manage without it.")
         return False
