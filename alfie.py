@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # A L F I E
-# version 1.5
+# version 1.6
 #
 # by Joakim Hertze
 
@@ -159,16 +159,16 @@ def format_day(dagar, notattext, is_saturday=False):
     # Add the day name and any notes
     result += "\\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3])
     
-    # Add notes if present
+    # Add notes if present - now with potential color
     if notattext:
-        result += "\\hfill \\mbox{\\small " + notattext + "}"
+        result += "\\hfill \\mbox{\\small \\notescolor{" + notattext + "}}"
     
     # Add newlines at the end
     result += "\n\n"
     
     return result
 
-def week1page():  # We build a week spread
+def week1pagenotes():  # We build a week spread
     latex = ""
     vecka = spliceyear([])
     vecka = purge(vecka)
@@ -280,63 +280,8 @@ def week2pageswf():  # We build a week spread
             n += 1
     return latex
 
-def week4pages():  # We build a four-page week spread
-    latex = ""
-    vecka = spliceyear([])
-    vecka = purge(vecka)
-    for envecka in vecka:
-        n = 0
-        versoheader1 = getheader(envecka[0:2])
-        versoheader2 = getheader(envecka[2:4])
-        rectoheader1 = getheader(envecka[4:6])
-        rectoheader2 = getheader(envecka[6:7])
 
-        for dagar in envecka:
-            notattext = notat(dagar)
-            is_saturday = (n == 5)  # Check if the day is Saturday
-            if n < 2:  # Monday and Tuesday
-                if n == 0:
-                    latex += "\\Large\\bfseries " + versoheader1 + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
-                    latex += "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
-                
-                # Use the helper function
-                latex += format_day(dagar, notattext, is_saturday)
-
-                if n == 1:
-                    latex += "\\vspace{\stretch{1}}\\pagebreak\n\n"
-            elif n < 4:  # Wednesday and Thursday
-                if n == 2:
-                    latex += "\\Large\\bfseries " + versoheader2 + " \\hfill \\normalfont\\small\n\n"
-                    latex += "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
-                
-                # Use the helper function
-                latex += format_day(dagar, notattext, is_saturday)
-
-                if n == 3:
-                    latex += "\\vspace{\stretch{1}}\\pagebreak\n\n"
-            elif n < 6:  # Friday and Saturday
-                if n == 4:
-                    latex += "\\Large\\bfseries " + rectoheader1 + " \\hfill \\normalfont\\small\n\n"
-                    latex += "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
-                
-                # Use the helper function
-                latex += format_day(dagar, notattext, is_saturday)
-
-                if n == 5:
-                    latex += "\\vspace{\stretch{1}}\\pagebreak\n\n"
-            else:  # Sunday
-                if n == 6:
-                    latex += "\\Large\\bfseries " + rectoheader2 + " \\hfill \\normalfont\\small\n\n"
-                    latex += "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
-                
-                # Use the helper function
-                latex += format_day(dagar, notattext, is_saturday)
-
-                latex += "\\vspace{\stretch{1}}\\pagebreak\n\n"
-            n += 1
-    return latex
-
-def weekgold():  # We build a week spread with a special "gold" layout
+def weekonepage():  # We build a week spread with a special "gold" layout
     latex = ""
     vecka = spliceyear([])
     vecka = purge(vecka)
@@ -362,11 +307,12 @@ def weekgold():  # We build a week spread with a special "gold" layout
             n += 1
     return latex
 
-def onedaytwopages():  # We build a layout with one day per two pages
+def onedayperpage():  # We build a layout with one day per page
     latex = ""
     vecka = spliceyear([])
     vecka = purge(vecka)
     for envecka in vecka:
+        n = 0  # Initialize counter at the beginning of each week
         for dagar in envecka:
             notattext = notat(dagar)
             is_saturday = (n == 5)  # Check if the day is Saturday
@@ -380,46 +326,10 @@ def onedaytwopages():  # We build a layout with one day per two pages
 
             # Add a page break after each day
             latex += "\\vspace{\stretch{1}}\\pagebreak\n\n"
+            
+            n += 1  # Increment the counter for each day
     return latex
 
-def week2pagesmargins():  # We build a week spread with margins for notes
-    latex = ""
-    vecka = spliceyear([])
-    vecka = purge(vecka)
-    for envecka in vecka:
-        n = 0
-        versoheader = getheader(envecka[0:3])
-        rectoheader = getheader(envecka[3:7])
-
-        for dagar in envecka:
-            notattext = notat(dagar)
-            is_saturday = (n == 5)  # Check if the day is Saturday
-            if n < 3:  # Monday to Wednesday
-                if n == 0:
-                    latex += "\\Large\\bfseries " + versoheader + " \\hfill \\normalfont\\small " + currweek + " " + getvecka(dagar) + "\n\n"
-                    latex += "\\vspace{-4mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
-                
-                # Use the helper function
-                latex += format_day(dagar, notattext, is_saturday)
-
-                if n < 2:
-                    latex += "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
-                if n == 2:
-                    latex += "\\vspace{\stretch{1}}\\pagebreak\n\n"
-            else:  # Thursday to Sunday
-                if n == 3:
-                    latex += "\\hfill \\Large\\bfseries " + rectoheader + " \\normalfont\\normalsize\n\n"
-                    latex += "\\vspace{-4.5mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n"
-                
-                # Use the helper function
-                latex += format_day(dagar, notattext, is_saturday)
-
-                if n < 6:
-                    latex += "\\vspace{\stretch{1}}\\rule{\\textwidth}{0.1pt}\\vspace{-2mm}\n\n"
-                if n == 6:
-                    latex += "\\vspace{\stretch{1}}\\pagebreak\n\n"
-            n += 1
-    return latex
     
 def preamble(): # This is the preamle
     latex = ""
@@ -440,11 +350,20 @@ def preamble(): # This is the preamle
     latex = latex + "\\setmainfont[BoldFont=Cronos Pro, ItalicFont=Cronos Pro Light Italic, BoldItalicFont=Cronos Pro Semibold, SlantedFont=Cronos Pro Bold, SmallCapsFont =Cronos Pro Light, SmallCapsFeatures={LetterSpace=1.15, Letters=SmallCaps}, Numbers={OldStyle, Proportional}, Scale=0.75 ] {Cronos Pro Light}\n"
     latex = latex + "\geometry{paperwidth=" + paperwidth + "mm, paperheight=" + paperheight + "mm, margin=" + margin + "mm, bottom=" + bottom + "mm, top=" + top + "mm, left=" + left + "mm, nohead}\n\n"
     latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4.5mm,minimum width=4.5mm, line width=0.1pt] (char) {#1};}}\n\n"
-    color_mode = input("Color or BW? ").strip().lower()
+    
     if color_mode == "color":
         latex += "\\newcommand*\\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=red!60!black] (char) {#1};}}\n\n"
+        # Define a new command for red notes text
+        latex += "\\newcommand*\\notescolor[1]{\\textcolor{red!60!black}{#1}}\n\n"
     else:
         latex += "\\newcommand*\\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=black] (char) {#1};}}\n\n"
+        # In BW mode, notes are black
+        latex += "\\newcommand*\\notescolor[1]{#1}\n\n"
+    
+    # Make the color_mode variable accessible globally
+    global is_color_mode
+    is_color_mode = (color_mode == "color")
+    
     latex = latex + "\\newcommand{\\tikzcircle}[2]{\\tikz[baseline=-0.5ex]\draw[#2,radius=#1,ultra thin] (0,0) circle ;}\n\n"
     latex = latex + "\\pagenumbering{gobble}\n\n"
     return latex
@@ -483,12 +402,16 @@ if len(sys.argv) < 2: # No arguments are given
     backmatter = ""
     match = False
     dolatex = ""
+    color_mode = ""
 
     while not (paper == "personal" or paper == "a5" or paper == "a6"or paper == "pocket"): # # Make sure a correct format is chosen
         paper = input("\n> What format should I use for your insert (pocket/personal/a5/a6)? ")
+
+    while not (color_mode == "color" or color_mode == "bw"): # Make sure the answer is color or bw
+        color_mode = input("\n> Should I use color or black & white mode (color/bw)? ").strip().lower()
         
-    while not (layout == "w2p" or layout == "w1p" or layout == "w2pwf" or layout =="w4p" or layout =="wg" or layout =="1d2p" or layout =="w2pmargins"): # # Make sure a correct layout is chosen
-        layout = input("\n> What layout should I use for your insert (w1p/w2p/w2pwf/w4p/wg/1d2p/w2pmargins)? ")
+    while not (layout == "w2p" or layout == "w1pnotes" or layout == "w2pwf" or layout =="w1p" or layout =="1dp"): # # Make sure a correct layout is chosen
+        layout = input("\n> What layout should I use for your insert (w1p/w1pnotes/w2p/w2pwf/1dp)? ")
 
     while not (language == "sv" or language == "de" or language == "en"): # # Make sure a correct language is chosen
         language = input("\n> What language should I use (sv/de/en)? ")
@@ -501,17 +424,28 @@ if len(sys.argv) < 2: # No arguments are given
         frontmatter = input("\n> Shall I include frontmatter (yes/no)? ")
     
     while not (backmatter == "yes" or backmatter == "no"): # Make sure the answer is yes or no
-        backmatter = input("\n> Shall I include backmatter (yes/no)? ")    
+        backmatter = input("\n> Shall I include backmatter (yes/no)? ")
+
+
 else: # Arguments are provided at launch
     match = False
     args = sys.argv[1].split("-")
-    paper = args[0]
-    layout = args[1]
-    language = args[2]
-    year = int(args[3])
-    frontmatter = args[4]
-    backmatter = args[5]
-    dolatex = args[6]
+    
+    # Updated argument order - color_mode is now the second parameter
+    paper = args[0] if len(args) > 0 else "personal"
+    color_mode = args[1] if len(args) > 1 else "bw"  # Default to bw if not specified
+    layout = args[2] if len(args) > 2 else "w1p"
+    language = args[3] if len(args) > 3 else "en"
+    
+    # Year needs validation
+    try:
+        year = int(args[4]) if len(args) > 4 else datetime.datetime.now().year
+    except (ValueError, IndexError):
+        year = datetime.datetime.now().year
+    
+    frontmatter = args[5] if len(args) > 5 else "no"
+    backmatter = args[6] if len(args) > 6 else "no"
+    dolatex = args[7] if len(args) > 7 else "no"
 
 # Set paper dimensions according to provided argument or choice  
   
@@ -611,16 +545,12 @@ if layout == "w2p":
     latex = latex + week2pages()
 elif layout == "w2pwf":
     latex = latex + week2pageswf()
-elif layout == "w4p":
-    latex = latex + week4pages()
-elif layout == "wg":
-    latex = latex + weekgold()
-elif layout == "1d2p":
-    latex = latex + onedaytwopages()
-elif layout == "w2pmargins":
-    latex = latex + week2pagesmargins()
+elif layout == "w1pnotes":
+    latex = latex + week1pagenotes()
+elif layout == "1dp":
+    latex = latex + onedayperpage()
 else:
-    latex = latex + week1page()
+    latex = latex + weekonepage()
 
 if backmatter == "yes":
     filebackmatter = readfile("backmatter-" + str(year) + "-" + language + ".txt")

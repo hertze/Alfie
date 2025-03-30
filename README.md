@@ -12,7 +12,7 @@ This script needs a few arguments to run:
 
 1. The format you want (pocket / personal / a6 / a5)
 
-2. The layout you want (w1p = week on one page with notes / w2p = week on two pages / w2pwf = week on two pages with emphasis on weekdays / w4p = week on four pages, with dot indicators / wg = week on four pages with room for notes / 1d2p = day on two pages with notes / w2pmargins = same as w2pwf, but with generous margins for freeflowing notation)
+2. The layout you want (w1p = 1 week per page / w1pnotes = week on one page with notes / w2p = week on two pages / w2pwf = week on two pages with emphasis on weekdays / 1dp = day per page)
 
 3. The language you want (sv / de / en)
 
