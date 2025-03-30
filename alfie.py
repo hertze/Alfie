@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # A L F I E
-# version 1.6
+# version 2.0
 #
 # by Joakim Hertze
 
@@ -404,27 +404,53 @@ if len(sys.argv) < 2: # No arguments are given
     dolatex = ""
     color_mode = ""
 
-    while not (paper == "personal" or paper == "a5" or paper == "a6"or paper == "pocket"): # # Make sure a correct format is chosen
-        paper = input("\n> What format should I use for your insert (pocket/personal/a5/a6)? ")
+    while not (paper == "personal" or paper == "a5" or paper == "a6"or paper == "pocket"): # Make sure a correct format is chosen
+        paper_input = input("\n> What format should I use for your insert (pocket/personal/a5/a6)? [personal] ")
+        # Use "personal" as default if user just presses Enter
+        paper = paper_input if paper_input else "personal"
 
     while not (color_mode == "color" or color_mode == "bw"): # Make sure the answer is color or bw
-        color_mode = input("\n> Should I use color or black & white mode (color/bw)? ").strip().lower()
+        color_mode_input = input("\n> Should I use color or black & white mode (color/bw)? [bw] ").strip().lower()
+        # Use "bw" as default if user just presses Enter
+        color_mode = color_mode_input if color_mode_input else "bw"
         
-    while not (layout == "w2p" or layout == "w1pnotes" or layout == "w2pwf" or layout =="w1p" or layout =="1dp"): # # Make sure a correct layout is chosen
-        layout = input("\n> What layout should I use for your insert (w1p/w1pnotes/w2p/w2pwf/1dp)? ")
+    while not (layout == "w2p" or layout == "w1p" or layout == "w2pwf" or layout == "w4p" or layout == "wg" or layout == "1d2p" or layout == "w2pmargins"): # Make sure a correct layout is chosen
+        layout_input = input("\n> What layout should I use for your insert (w1p/w2p/w2pwf/w4p/wg/1d2p/w2pmargins)? [w1p] ")
+        # Use "w1p" as default if user just presses Enter
+        layout = layout_input if layout_input else "w1p"
 
     while not (language == "sv" or language == "de" or language == "en"): # # Make sure a correct language is chosen
-        language = input("\n> What language should I use (sv/de/en)? ")
+        language_input = input("\n> What language should I use (sv/de/en)? [sv] ")
+        # Use "sv" as default if user just presses Enter
+        language = language_input if language_input else "sv"
     
-    while not match: # # Make sure it's a valid yesr
-        year = int(input("\n> What year do you need (YYYY)? "))
-        match = re.search("^\d{4}$", str(year))
+    while not match: # # Make sure it's a valid year
+        # Get current year for default
+        current_year = datetime.datetime.now().year
+        year_input = input("\n> What year do you need (YYYY)? [{}] ".format(current_year))
+        
+        # Use current year if user just presses Enter
+        if not year_input:
+            year = current_year
+            match = True
+        else:
+            # Otherwise validate the input year
+            try:
+                year = int(year_input)
+                match = re.search("^\d{4}$", str(year))
+            except ValueError:
+                match = False
+                print("Please enter a valid 4-digit year.")
     
     while not (frontmatter == "yes" or frontmatter == "no"): # Make sure the answer is yes or no
-        frontmatter = input("\n> Shall I include frontmatter (yes/no)? ")
+        frontmatter_input = input("\n> Shall I include frontmatter (yes/no)? [no] ")
+        # Use "no" as default if user just presses Enter
+        frontmatter = frontmatter_input if frontmatter_input else "no"
     
     while not (backmatter == "yes" or backmatter == "no"): # Make sure the answer is yes or no
-        backmatter = input("\n> Shall I include backmatter (yes/no)? ")
+        backmatter_input = input("\n> Shall I include backmatter (yes/no)? [no] ")
+        # Use "no" as default if user just presses Enter
+        backmatter = backmatter_input if backmatter_input else "no"
 
 
 else: # Arguments are provided at launch
@@ -573,7 +599,9 @@ if len(sys.argv) < 2: # Only feedback is script is run without arguments
 
 if len(sys.argv) < 2:    
     while not (dolatex == "yes" or dolatex == "no"): # Make sure the answer is yes or no
-        dolatex = input("\n> Shall try to typeset your LaTeX document (yes/no)? ")
+        dolatex_input = input("\n> Shall try to typeset your LaTeX document (yes/no)? [yes] ")
+        # Use "yes" as default if user just presses Enter
+        dolatex = dolatex_input if dolatex_input else "yes"
 
 if dolatex == "yes": # Shall it try to typeset the LaTeX file?
     os.system("xelatex diary-" + paper + "-" + str(year) + "-" + language + ".tex")
@@ -581,5 +609,5 @@ if dolatex == "yes": # Shall it try to typeset the LaTeX file?
     os.system("open diary-" + paper + "-" + str(year) + "-" + language + ".pdf")
     
 if len(sys.argv) < 2: # Signing out
-    print ("\n\nHave a nice day!")    
+    print ("\n\nAll done!")    
     print ("\n\n---------------------------------------------------------\n\n")
