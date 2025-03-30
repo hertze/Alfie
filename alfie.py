@@ -120,29 +120,7 @@ def weeknotat(dennavecka): # Checks if there is a note for the current week
     return weeknotat
 
     
-def weekdots(day): # Assemble week dots according to day
-    if day == 1 or day == 5:
-        weekdots = ""
-    else:
-        weekdots = ""
-    for x in range(0, day):
-        weekdots = weekdots + "\\tikzcircle{2pt}{fill=black}\\hspace{2pt}"
-    for x in range(day, 7):
-        weekdots = weekdots + "\\tikzcircle{2pt}{}\\hspace{2pt}"
-    return weekdots
-    
 def format_day(dagar, notattext, is_saturday=False):
-    """
-    Formats a single day's LaTeX output based on its properties.
-    
-    Args:
-        dagar: List containing day information (e.g., date, weekday name).
-        notattext: Notes for the day, if any.
-        is_saturday: Boolean indicating if the day is Saturday.
-    
-    Returns:
-        A string containing the LaTeX representation of the day.
-    """
     # Start building the LaTeX string
     result = "\\large\\bfseries "
     
