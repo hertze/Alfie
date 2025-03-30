@@ -700,7 +700,11 @@ def preamble(): # This is the preamle
     latex = latex + "\\setmainfont[BoldFont=Cronos Pro, ItalicFont=Cronos Pro Light Italic, BoldItalicFont=Cronos Pro Semibold, SlantedFont=Cronos Pro Bold, SmallCapsFont =Cronos Pro Light, SmallCapsFeatures={LetterSpace=1.15, Letters=SmallCaps}, Numbers={OldStyle, Proportional}, Scale=0.75 ] {Cronos Pro Light}\n"
     latex = latex + "\geometry{paperwidth=" + paperwidth + "mm, paperheight=" + paperheight + "mm, margin=" + margin + "mm, bottom=" + bottom + "mm, top=" + top + "mm, left=" + left + "mm, nohead}\n\n"
     latex = latex + "\\newcommand*\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,minimum height=4.5mm,minimum width=4.5mm, line width=0.1pt] (char) {#1};}}\n\n"
-    latex = latex + "\\newcommand*\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=black] (char) {#1};}}\n\n"
+    color_mode = input("Color or BW? ").strip().lower()
+    if color_mode == "color":
+        latex += "\\newcommand*\\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=red!60!black] (char) {#1};}}\n\n"
+    else:
+        latex += "\\newcommand*\\circledfill[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=black] (char) {#1};}}\n\n"
     latex = latex + "\\newcommand{\\tikzcircle}[2]{\\tikz[baseline=-0.5ex]\draw[#2,radius=#1,ultra thin] (0,0) circle ;}\n\n"
     latex = latex + "\\pagenumbering{gobble}\n\n"
     return latex
