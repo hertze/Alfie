@@ -866,8 +866,8 @@ if __name__ == "__main__":
                 ["color", "bw"], "bw"
             ),
             "layout": get_user_input(
-                "\n> What layout should I use for your insert (w1p/w2p/w2pwf/1dp)? [w1p] ",
-                ["w1p", "w2p", "w2pwf", "1dp"], "w1p"
+                "\n> What layout should I use for your insert (w1p/w2p/w2pwf/1dp)? [w2pwf] ",
+                ["w1p", "w2p", "w2pwf", "1dp"], "w2pwf"
             ),
             "language": get_user_input(
                 "\n> What language should I use (sv/de/en)? [sv] ",
