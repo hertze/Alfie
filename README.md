@@ -20,11 +20,7 @@ This script needs a few arguments to run:
 
 5. The year you want
 
-6. Whether it should include a frontmatter (yes / no)
-
-7. Whether it should include a backmatter (yes / no)
-
-8. Whether it should try to typeset the resulting LaTeX file (yes / no)
+6. Whether it should try to typeset the resulting LaTeX file (yes / no)
 
 If you launch the script without arguments, it will run with a minimal text interface, taking you through some questions:
 
