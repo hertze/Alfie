@@ -799,12 +799,6 @@ def assemble_diary(config, lang_strings, dimension_params, supplementary_files):
     # Start building the diary
     latex = preamble() + opening()
     
-    # Add frontmatter if requested
-    if config["frontmatter"] == "yes":
-        filefrontmatter = readfile(f"frontmatter-{config['year']}-{config['language']}.txt")
-        if filefrontmatter:
-            latex = latex + getmatter(filefrontmatter) + "\\pagebreak\n\n"
-    
     # Add the appropriate layout
     if config["layout"] == "w2p":
         latex = latex + week2pages()
@@ -816,12 +810,6 @@ def assemble_diary(config, lang_strings, dimension_params, supplementary_files):
         latex = latex + onedayperpage()
     else:
         latex = latex + weekonepage()
-    
-    # Add backmatter if requested
-    if config["backmatter"] == "yes":
-        filebackmatter = readfile(f"backmatter-{config['year']}-{config['language']}.txt")
-        if filebackmatter:
-            latex = latex + "\\pagebreak\n\n" + getmatter(filebackmatter)
     
     # Close the document
     latex = latex + closing()
@@ -888,14 +876,6 @@ if __name__ == "__main__":
             "year": get_year_input(
                 f"\n> What year do you need (YYYY)? [{current_year}] ",
                 current_year
-            ),
-            "frontmatter": get_user_input(
-                "\n> Shall I include frontmatter (yes/no)? [no] ",
-                ["yes", "no"], "no"
-            ),
-            "backmatter": get_user_input(
-                "\n> Shall I include backmatter (yes/no)? [no] ",
-                ["yes", "no"], "no"
             )
         }
     else:
