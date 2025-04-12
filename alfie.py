@@ -284,7 +284,7 @@ def preamble():  # This is the preamble
         "\\usepackage{pifont}",
         "\\usepackage[bookmarks=true,pdfborder={{0 0 0}}]{hyperref}",
         "\\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}",
-        "\\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}",
+        "\\usepackage[cam,a4,center,dvips,noinfo,odd]{crop}",
         "\\defaultfontfeatures{Mapping=tex-text}",
         "\\setmainfont[BoldFont=Cronos Pro, ItalicFont=Cronos Pro Light Italic, " +
         "BoldItalicFont=Cronos Pro Semibold, SlantedFont=Cronos Pro Bold, SmallCapsFont=Cronos Pro Light, " +
