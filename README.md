@@ -14,7 +14,7 @@ This script needs a few arguments to run:
 
 2. If you want your diary in color or black and white (color / bw)
 
-3. The layout you want (w1p = 1 week per page / w1pnotes = week on one page with notes / w2p = week on two pages / w2pwf = week on two pages with emphasis on weekdays / 1dp = day per page)
+3. The layout you want (w1p = 1 week per page / w1pnotes = week on one page with notes / w2p = week on two pages / w2pwf = week on two pages with emphasis on weekdays / 1dp = day per page / wg = extra everything)
 
 4. The language you want (sv / de / en)
 
