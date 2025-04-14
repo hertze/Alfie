@@ -610,6 +610,116 @@ def onedayperpage():
             latex_parts.append(format_separator(is_pagebreak=True))
     
     return "".join(latex_parts)
+
+
+def weekgold():
+    """
+    Generates a 'gold' layout with specialized formatting for the week.
+    Each week spans multiple pages with dedicated spaces for weeknotes and gratitude.
+    
+    Returns:
+        str: Complete LaTeX code for the layout
+    """
+    latex_parts = []
+    calendar_data = generate_calendar_data()
+    
+    for week in calendar_data:
+        week_number = getvecka(week[0])
+        versoheader1 = getheader(week[0:2])
+        rectoheader1 = getheader(week[3:4])
+        versoheader2 = getheader(week[5:7])
+        rectoheader2 = getheader(week[5:7])
+        
+        # Get week note for this week
+        weeknotattext = weeknotat(week_number)
+        
+        # Process each day of the week
+        for day_index, day in enumerate(week):
+            note_text = notat(day)
+            is_saturday = (day_index == 5)
+            
+            if day_index < 3:  # Monday to Wednesday (verso page)
+                if day_index == 0:  # Monday - add header
+                    latex_parts.append(format_header(versoheader1, week_number, is_first_day=True))
+                
+                if day_index > 0:  # Add separator before Tuesday and Wednesday
+                    latex_parts.append(format_separator())
+                
+                # Add the day
+                latex_parts.append(format_day(day, note_text, is_saturday, is_recto=False))
+                
+                # End of Wednesday - add week dots and page break
+                if day_index == 2:
+                    latex_parts.append("\\vspace{\\stretch{1}}\n")
+                    latex_parts.append(weekdots(3))
+                    latex_parts.append("\\pagebreak\n\n")
+            
+            elif 2 < day_index < 5:  # Thursday and Friday (recto page)
+                if day_index == 3:  # Thursday - add header
+                    latex_parts.append(format_header(rectoheader1, "", is_second_half=True))
+                
+                # Add the day
+                latex_parts.append(format_day(day, note_text, is_saturday, is_recto=True))
+                
+                # After Friday - add footnote symbol, week dots, and page break
+                if day_index < 4:
+                    latex_parts.append(format_separator())
+                else:  # Friday
+                    latex_parts.append("\\footnotesize \\ding{93} \n\n")
+                    latex_parts.append("\\vspace{\\stretch{1}}\n")
+                    latex_parts.append("\\hfill" + weekdots(5))
+                    latex_parts.append("\\pagebreak\n\n")
+            
+            else:  # Saturday and Sunday
+                if day_index == 5:  # Saturday - add header
+                    latex_parts.append(format_header(versoheader2, week_number, is_first_day=False))
+                
+                # Add the day
+                latex_parts.append(format_day(day, note_text, is_saturday, is_recto=False))
+                
+                # Add separator after Saturday
+                if day_index < 6:
+                    latex_parts.append(format_separator())
+                else:  # End of Sunday
+                    latex_parts.append("\\hfill \\footnotesize \\ding{93} \n\n")
+                    latex_parts.append("\\vspace{\\stretch{1}}\n")
+                    latex_parts.append(weekdots(7))
+                    latex_parts.append("\\pagebreak\n\n")
+                    
+                    # Add gratitude page after Sunday
+                    if day_index == 6:
+                        latex_parts.append("\\hfill \\Large\\bfseries " + rectoheader2 + " \\normalfont\\normalsize\n\n")
+                        latex_parts.append("\\vspace{-4.5mm}\\rule{\\textwidth}{0.4pt}\\vspace{-2mm}\n\n")
+                        
+                        # Add week notes if available
+                        if weeknotattext:
+                            latex_parts.append(weeknotattext + "\n\n")
+                        
+                        # Add gratitude section
+                        latex_parts.append("\\vspace{\\stretch{3}}\\rule{2cm}{0.1pt}\n\n")
+                        latex_parts.append("\\vspace{-2mm}" + gratitude + "\n\n")
+                        latex_parts.append("\\vspace{\\stretch{1}}\n\n")
+                        latex_parts.append("\\pagebreak\n\n")
+    
+    return "".join(latex_parts)
+
+def weekdots(day):
+    """
+    Assembles week dots according to day.
+    
+    Args:
+        day (int): The current day of the week (1-7)
+        
+    Returns:
+        str: LaTeX code for the week dots
+    """
+    weekdots_code = ""
+    for x in range(0, day):
+        weekdots_code += "\\tikzcircle{2pt}{fill=black}\\hspace{2pt}"
+    for x in range(day, 7):
+        weekdots_code += "\\tikzcircle{2pt}{}\\hspace{2pt}"
+    return weekdots_code
+
     
 # Main script section - improved for readability and maintainability
 
@@ -847,6 +957,8 @@ def assemble_diary(config, lang_strings, dimension_params, supplementary_files):
         latex = latex + week1pagenotes()
     elif config["layout"] == "1dp":
         latex = latex + onedayperpage()
+    elif config["layout"] == "wg":
+        latex = latex + weekgold()
     else:
         latex = latex + weekonepage()
     
@@ -905,8 +1017,8 @@ if __name__ == "__main__":
                 ["color", "bw"], "bw"
             ),
             "layout": get_user_input(
-                "\n> What layout should I use for your insert (w1p/w1pnotes/w2p/w2pwf/1dp)? [w2pwf] ",
-                ["w1p", "w1pnotes", "w2p", "w2pwf", "1dp"], "w2pwf"
+                "\n> What layout should I use for your insert (w1p/w1pnotes/w2p/w2pwf/1dp/wg)? [w2pwf] ",
+                ["w1p", "w1pnotes", "w2p", "w2pwf", "1dp", "wg"], "w2pwf"
             ),
             "language": get_user_input(
                 "\n> What language should I use (sv/de/en)? [sv] ",
