@@ -176,24 +176,44 @@ def weeknotat(dennavecka):  # Checks if there is a note for the current week
 
     return ""  # Return an empty string if no match is found
     
-def format_day(dagar, notattext, is_saturday=False):
+def format_day(dagar, notattext, is_saturday=False, is_recto=False):
+    """
+    Formats a single day's LaTeX representation.
+
+    Args:
+        dagar (list): A list representing a day, where the second and first elements
+                      represent the day and month.
+        notattext (str): The note for the day, if any.
+        is_saturday (bool): Whether the day is Saturday.
+        is_recto (bool): Whether the page is a recto (right-hand) page.
+
+    Returns:
+        str: The LaTeX representation of the day.
+    """
     # Start building the LaTeX string
     result = "\\large\\bfseries "
     
     # Add the appropriate circle formatting based on day type
     if is_saturday:  # Saturday (always black circle)
-        # Use explicit black-filled circle for Saturdays
-        result += "\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=black] (char) {\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}};}  "
+        day_number = "\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=0.1pt,minimum height=4.55mm,minimum width=4.55mm, line width=0.1pt, fill=black] (char) {\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}};}  "
     elif holiday(dagar):  # Holiday or Sunday
-        result += "\\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} "
+        day_number = "\\circledfill{\\bfseries\\textcolor{white}{" + str(dagar[2]) + "}} "
         result = result.replace("\\large\\bfseries", "\\large\\bfseries\\itshape")
     else:  # Regular weekday
-        result += "\\circled{" + str(dagar[2]) + "} "
+        day_number = "\\circled{" + str(dagar[2]) + "} "
     
-    # Add the day name and any notes
-    result += "\\hspace{0mm} \\normalfont\\normalsize " + str(dagar[3])
+    # Add the day name
+    day_name = "\\normalfont\\normalsize " + str(dagar[3])
     
-    # Add notes if present - now with potential color
+    # Adjust alignment based on page type
+    if is_recto:
+        # On recto pages, align both day name and day number to the right
+        result = "\\hfill " + day_name + " \\hspace{0mm} " + day_number
+    else:
+        # On verso pages, place the day number to the left of the day name
+        result += day_number + " \\hspace{0mm} " + day_name
+    
+    # Add notes if present
     if notattext:
         result += "\\hfill \\mbox{\\small \\notescolor{" + notattext + "}}"
     
@@ -380,9 +400,15 @@ def week1pagenotes():
     latex_parts = []
     calendar_data = generate_calendar_data()
     
+    # Page counter to track recto/verso pages
+    page_counter = 0
+    
     for week in calendar_data:
         week_number = getvecka(week[0])
         header_text = getheader(week[0:7])
+        
+        # Determine if this page is a recto page (odd pages are recto, even pages are verso)
+        is_recto_page = (page_counter % 2 == 1)
         
         # Add week header
         latex_parts.append(format_header(header_text, week_number, is_first_day=True))
@@ -392,8 +418,9 @@ def week1pagenotes():
             note_text = notat(day)
             is_saturday = (day_index == 5)
             
-            # Add the day
-            latex_parts.append(format_day(day, note_text, is_saturday))
+            # All days on the same page should have the same alignment
+            # based on whether the page is recto or verso
+            latex_parts.append(format_day(day, note_text, is_saturday, is_recto=is_recto_page))
             
             # Add appropriate separator
             if day_index < 6:
@@ -402,9 +429,12 @@ def week1pagenotes():
                 latex_parts.append(format_separator(is_pagebreak=True))
                 latex_parts.append(f"\\hfill \\small {notesden} \n\n")
                 latex_parts.append("\\pagebreak\n\n")
+        
+        # Each week takes TWO pages (one for the week and one for notes)
+        # So we need to increase the page counter by 2
+        page_counter += 2
     
     return "".join(latex_parts)
-
 def week2pages():
     """
     Generates a two-page-per-week layout.
@@ -429,8 +459,8 @@ def week2pages():
             note_text = notat(day)
             is_saturday = False  # First half never contains Saturday
             
-            # Add the day
-            latex_parts.append(format_day(day, note_text, is_saturday))
+            # Add the day (verso page)
+            latex_parts.append(format_day(day, note_text, is_saturday, is_recto=False))
             
             # Add appropriate separator
             if day_index < 2:
@@ -446,8 +476,8 @@ def week2pages():
             note_text = notat(day)
             is_saturday = (day_index == 5)
             
-            # Add the day
-            latex_parts.append(format_day(day, note_text, is_saturday))
+            # Add the day (recto page)
+            latex_parts.append(format_day(day, note_text, is_saturday, is_recto=True))
             
             # Add appropriate separator
             if day_index < 6:
@@ -481,8 +511,8 @@ def week2pageswf():
             note_text = notat(day)
             is_saturday = False  # First half never contains Saturday
             
-            # Add the day
-            latex_parts.append(format_day(day, note_text, is_saturday))
+            # Add the day (verso page)
+            latex_parts.append(format_day(day, note_text, is_saturday, is_recto=False))
             
             # Add appropriate separator
             if day_index < 2:
@@ -498,8 +528,8 @@ def week2pageswf():
             note_text = notat(day)
             is_saturday = (day_index == 5)
             
-            # Add the day
-            latex_parts.append(format_day(day, note_text, is_saturday))
+            # Add the day (recto page)
+            latex_parts.append(format_day(day, note_text, is_saturday, is_recto=True))
             
             # Add appropriate separator with custom stretch values
             if day_index < 5:
@@ -521,9 +551,16 @@ def weekonepage():
     latex_parts = []
     calendar_data = generate_calendar_data()
     
+    # Page counter to track recto/verso pages
+    page_counter = 0
+    
     for week in calendar_data:
         week_number = getvecka(week[0])
         header_text = getheader(week[0:7])
+        
+        # Determine if this page is a recto page (odd pages are recto, even pages are verso)
+        is_recto_page = (page_counter % 2 == 1)
+        page_counter += 1
         
         # Add week header
         latex_parts.append(format_header(header_text, week_number))
@@ -533,8 +570,9 @@ def weekonepage():
             note_text = notat(day)
             is_saturday = (day_index == 5)
             
-            # Add the day
-            latex_parts.append(format_day(day, note_text, is_saturday))
+            # All days on the same page should have the same alignment
+            # based on whether the page is recto or verso
+            latex_parts.append(format_day(day, note_text, is_saturday, is_recto=is_recto_page))
             
             # Add appropriate separator
             if day_index < 6:
@@ -560,12 +598,13 @@ def onedayperpage():
             header_text = getheadersingle([day])
             note_text = notat(day)
             is_saturday = (day_index == 5)
+            is_recto = (day_index % 2 == 1)  # Alternate recto/verso
             
             # Add day header
             latex_parts.append(format_header(header_text, week_number))
             
             # Add the day
-            latex_parts.append(format_day(day, note_text, is_saturday))
+            latex_parts.append(format_day(day, note_text, is_saturday, is_recto))
             
             # Always add a page break after each day
             latex_parts.append(format_separator(is_pagebreak=True))
@@ -866,8 +905,8 @@ if __name__ == "__main__":
                 ["color", "bw"], "bw"
             ),
             "layout": get_user_input(
-                "\n> What layout should I use for your insert (w1p/w2p/w2pwf/1dp)? [w2pwf] ",
-                ["w1p", "w2p", "w2pwf", "1dp"], "w2pwf"
+                "\n> What layout should I use for your insert (w1p/w1pnotes/w2p/w2pwf/1dp)? [w2pwf] ",
+                ["w1p", "w1pnotes", "w2p", "w2pwf", "1dp"], "w2pwf"
             ),
             "language": get_user_input(
                 "\n> What language should I use (sv/de/en)? [sv] ",
