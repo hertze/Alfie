@@ -411,7 +411,7 @@ def week1pagenotes():
         is_recto_page = (page_counter % 2 == 1)
         
         # Add week header
-        latex_parts.append(format_header(header_text, week_number, is_first_day=True))
+        latex_parts.append(format_header(header_text, week_number, is_first_day=False))
         
         # Add each day of the week
         for day_index, day in enumerate(week):
