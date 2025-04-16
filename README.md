@@ -26,17 +26,13 @@ The script will as you a series of questions:
 
 6. Whether it should try to typeset the resulting LaTeX file (yes / no)
 
-If you launch the script without arguments, it will run with a minimal text interface, taking you through some questions:
-
-> `python3 alfie.py`
-
-If you run it with an argument, it will run *without* any interface whatsoever. You need to use the following syntax for the argument to work:
+Answers to those questions can be passed as arguments and bypass the text interface. IYou need to use the following syntax for the argument to work:
     
-> `python3 alfie.py <format>-<color>-<layout>-<language>-<year>-<frontmatter>-<backmatter>-<typeset>`
+> `python3 alfie.py <format>-<color>-<layout>-<language>-<year>-<typeset>`
 
 For example:
 
-> `python3 alfie.py personal-color-w2p-sv-2014-no-no-yes`
+> `python3 alfie.py personal-color-w2p-sv-2014-yes`
 
 will make a Swedish LaTeX diary for 2014 in personal size and then typeset it.
 
