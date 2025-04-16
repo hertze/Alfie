@@ -26,7 +26,7 @@ The script will as you a series of questions:
 
 6. Whether it should try to typeset the resulting LaTeX file (yes / no)
 
-Answers to those questions can be passed as arguments and thus bypass the text interface. IYou need to use the following syntax for the argument to work:
+Answers to those questions can be passed as arguments and thus bypass the text interface. You need to use the following syntax for the argument to work:
     
 > `python3 alfie.py <format>-<color>-<layout>-<language>-<year>-<typeset>`
 
