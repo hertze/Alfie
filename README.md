@@ -26,7 +26,7 @@ The script will as you a series of questions:
 
 6. Whether it should try to typeset the resulting LaTeX file (yes / no)
 
-Answers to those questions can be passed as arguments and thus bypass the text interface. You need to use the following syntax for the argument to work:
+Answers to those questions can be passed as an argument and thus bypass the text interface. You need to use the following syntax:
     
 > `python3 alfie.py <format>-<color>-<layout>-<language>-<year>-<typeset>`
 
@@ -57,7 +57,7 @@ The second file adds text information for specific days, like this:
     18 april: Långfredagen
     20 april: Påskdagen
 
-There is a third file, **weeknotes-<year>.txt**, that holds additional text content for the layout **weekgold**, such as inspirational quotes. Here's an example, where the preceding number equals the week number where the text should be added:
+There is a third file, **weeknotes-<year>.txt**, that holds additional text content for the layout **wg**, such as inspirational quotes. Here's an example, where the preceding number equals the week number where the text should be added:
 
     1: Two roads diverged in a wood, and I--I took the one less traveled by, And that has made all the difference. --- Robert Frost
 
