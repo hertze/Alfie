@@ -2,9 +2,7 @@
 
 This is Alfie, a python script capable of generating diary inserts in pocket, personal or A5 size of any year you want. The script in itself makes a LaTeX file ready for typesetting and can try to typeset it for you if you have XeLateX installed on your system.
 
-Right now, Alfie can make diaries in Swedish, English and German. It can render holidays and date-specific notes, as listed in used-provided text files. It can also add front and back matter, as supplied by supplementary files.
-
-If you want to use the script “out of the box” you need the free Adobe Source Sans Pro font installed on your machine. You can of course use whatever font you like, but I find Source Sans Pro Light to be ideal for this kind of thing. You also need to have LaTeX installed in order to typeset the resulting LaTeX-files
+Right now, Alfie can make diaries in Swedish, English and German. It can render holidays and date-specific notes, as listed in used-provided text files.
 
 ## Manual
 
@@ -12,7 +10,7 @@ If you want to use the script “out of the box” you need the free Adobe Sourc
 
 From the terminal (on a Mac), run the script with `python3 alfie.py`.
 
-The script will as you a series of questions:
+The script will ask you a series of questions:
 
 1. The format you want (pocket / personal / a6 / a5)
 
