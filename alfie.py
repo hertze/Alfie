@@ -209,10 +209,10 @@ def format_day(dagar, notattext, is_saturday=False, is_recto=False):
     if is_recto:
         if notattext:
             # On recto pages with notes, put notes to the left
-            result = "\\small \\notescolor{" + notattext + "} \\hfill " + day_name + " \\hspace{0mm} " + day_number
+            result = "\\small \\notescolor{" + notattext + "} \\hfill " + result + day_name + " \\hspace{0mm} " + day_number
         else:
             # On recto pages without notes, align day name and day number to the right
-            result = "\\hfill " + day_name + " \\hspace{0mm} " + day_number
+            result = "\\hfill " + result + day_name + " \\hspace{0mm} " + day_number
     else:
         # On verso pages, place the day number to the left of the day name
         result += day_number + " \\hspace{0mm} " + day_name
