@@ -823,7 +823,7 @@ def set_paper_dimensions(paper):
         },
         "pocket": {
             "paperheight": "122", "paperwidth": "83",
-            "margin": "4", "left": "9.5", "top": "3", "bottom": "4"
+            "margin": "4", "left": "12", "top": "3", "bottom": "4"
         },
         "personal": {
             "paperheight": "173", "paperwidth": "97",
