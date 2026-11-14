@@ -36,6 +36,7 @@ DEFAULTS = {
     "color": "bw",        # bw or color
     "layout": "w2pwf",    # one of LAYOUTS below
     "language": "sv",     # sv, de or en
+    "save_paper": False,  # True: 2 or 4 pages on each A4 sheet (see --save-paper)
 }
 AUTHOR = "Joakim Hertze"
 
@@ -45,8 +46,8 @@ AUTHOR = "Joakim Hertze"
 DATES_FILES = ("dates.md", "dates.txt")              # your dates
 WEEKNOTES_FILES = ("weeknotes.md", "weeknotes.txt")  # week notes for layout wg
 
-# The PDF ends up in the folder you run Alfie in. The LaTeX file and
-# XeLaTeX's working files (.aux, .log, .out) go in this subfolder.
+# The PDF ends up in the folder you run Alfie in. LaTeX works in this subfolder, which is
+# removed again after a successful run; it's left when XeLaTeX fails, so the log can be read.
 BUILD_DIR = "build"
 
 LAYOUTS = {
@@ -141,7 +142,13 @@ def last_in_month(year, month, weekday):
 
 
 def swedish_calendar(year):
-    """(date, name, red day?) for one year. Edit this list to change what's built in."""
+    """(date, name, red day?) for one year.
+
+    The red days follow Lag (1989:253) om allmänna helgdagar as amended by SFS 2004:1320,
+    in force since 2005. Easter uses the ecclesiastical (Gregorian) full moon, as the law's
+    preparatory work says (prop. 1988/89:114). test_alfie.py checks every year from 2005 to
+    9998 against a separate implementation of the law's wording. The named days that aren't
+    red can be changed freely; the red days must stay as the law says."""
     easter = easter_sunday(year)
     midsummer = first_on_or_after(date(year, 6, 20), SAT)
     return [
@@ -182,6 +189,10 @@ HOLIDAY_CALENDARS = {
     "se": swedish_calendar,
     "none": lambda year: [],
 }
+
+# The first diary year the built-in calendar is right for. Until 2004 Annandag pingst was
+# a red day and Nationaldagen wasn't, so Alfie refuses earlier years rather than guess.
+FIRST_SWEDISH_YEAR = 2005
 
 # ---------------------------------------------------------------------------
 # Your dates and week notes: dates.md/.txt and weeknotes.md/.txt
@@ -447,7 +458,9 @@ class Diary:
         self.strings = LANGUAGES[language]
         self.notes = notes
 
-    def latex(self):
+    def latex(self, trimmed=False):
+        """The whole diary. trimmed: each PDF page is just the diary page, without the A4
+        sheet and crop marks around it (for laying several on a sheet)."""
         layouts = {
             "w1p": self.week_on_one_page,
             "w1pnotes": self.week_with_notes_page,
@@ -456,7 +469,7 @@ class Diary:
             "1dp": self.day_per_page,
             "wg": self.week_gold,
         }
-        return self.preamble() + self.opening() + layouts[self.layout]() + "\\end{document}\n\n"
+        return self.preamble(trimmed) + self.opening() + layouts[self.layout]() + "\\end{document}\n\n"
 
     # --- Days and weeks
 
@@ -495,7 +508,7 @@ class Diary:
 
     # --- Building blocks
 
-    def preamble(self):
+    def preamble(self, trimmed=False):
         paper = PAPERS[self.paper]
         fill = "red!60!black" if self.color == "color" else "black"
         notes = "\\textcolor{red!60!black}{#1}" if self.color == "color" else "#1"
@@ -508,8 +521,10 @@ class Diary:
             "\\usepackage{tikz}",
             "\\usepackage{pifont}",
             "\\usepackage[bookmarks=true,pdfborder={{0 0 0}}]{hyperref}",
-            "\\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}",
-            "\\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}",
+            *(["\\usepackage[twoside]{geometry}"] if trimmed else [  # trimmed: the PDF page is the diary page
+                "\\usepackage[dvips=false,pdftex=false,vtex=false,twoside]{geometry}",
+                "\\usepackage[cross,a4,center,dvips,noinfo,odd]{crop}",  # one page per A4 sheet, crop marks
+            ]),
             "\\defaultfontfeatures{Mapping=tex-text}",
             "\\setmainfont[BoldFont=Cronos Pro, ItalicFont=Cronos Pro Light Italic, "
             "BoldItalicFont=Cronos Pro Semibold, SlantedFont=Cronos Pro Bold, SmallCapsFont=Cronos Pro Light, "
@@ -668,12 +683,169 @@ class Diary:
     # --- Checking
 
     def print_list(self):
-        print(f"\nRed days (●) and notes for {self.year}:\n")
+        print(f"\nRed days (●) and notes for {self.year}. Ordinary Sundays are red too, but aren't marked.\n")
         for day in sorted(day for day in self.notes.days if day.year == self.year):
             info = self.notes.days[day]
             if info.text or info.red:
-                mark = "●" if self.is_red(day) else " "
+                mark = "●" if info.red else " "
                 print(f"{day.day:>3} {self.month_name(day)[:3]} {self.day_name(day)[:3]}  {mark} {info.text}")
+
+# ---------------------------------------------------------------------------
+# Saving paper: several diary pages on each A4 sheet, printed two-sided
+# ---------------------------------------------------------------------------
+
+SHEET_WIDTH, SHEET_HEIGHT = 210.0, 297.0  # A4, portrait, mm
+SHEET_MARGIN = 10.0                       # at least this much paper around the pages
+SHEET_GUTTER = 10.0                       # paper between pages, room for crop marks
+MARK_GAP, MARK_LENGTH = 2.0, 5.0          # crop marks: gap from the page corner, and length
+PILES = "ABCDEFGH"
+
+
+@dataclass
+class SheetLayout:
+    cols: int
+    rows: int
+    turned: bool   # pages turned a quarter turn, because more of them fit that way
+    width: float   # a page's size on the sheet, after turning, mm
+    height: float
+
+    @property
+    def per_side(self):
+        return self.cols * self.rows
+
+
+@dataclass
+class Placement:
+    slot: int      # where on the sheet: 0 is pile A (top left), then reading order
+    page: int      # diary page, from 1
+    box: tuple     # (left, bottom, right, top) on the sheet, mm from its lower left corner
+    angle: int     # turned this many degrees counterclockwise
+
+
+def sheet_layout(paper):
+    """The arrangement that fits the most pages of this size on an A4 sheet, or None if only
+    one fits. Sheets stay portrait, so the usual two-sided setting (flip on the long edge)
+    is the right one; pages are turned instead when that fits more of them."""
+    width, height = float(PAPERS[paper]["width"]), float(PAPERS[paper]["height"])
+    best = None
+    for turned in (False, True):
+        w, h = (height, width) if turned else (width, height)
+        cols = int((SHEET_WIDTH - 2 * SHEET_MARGIN + SHEET_GUTTER) // (w + SHEET_GUTTER))
+        rows = int((SHEET_HEIGHT - 2 * SHEET_MARGIN + SHEET_GUTTER) // (h + SHEET_GUTTER))
+        if cols * rows > (best.per_side if best else 1):
+            best = SheetLayout(cols, rows, turned, w, h)
+    return best
+
+
+def sheet_count(layout, page_count):
+    leaves = (page_count + 1) // 2
+    return -(-leaves // layout.per_side)  # rounded up
+
+
+def block_box(layout):
+    """(left, bottom, right, top) of all the pages on a sheet together, centred on it."""
+    width = layout.cols * layout.width + (layout.cols - 1) * SHEET_GUTTER
+    height = layout.rows * layout.height + (layout.rows - 1) * SHEET_GUTTER
+    left, bottom = (SHEET_WIDTH - width) / 2, (SHEET_HEIGHT - height) / 2
+    return left, bottom, left + width, bottom + height
+
+
+def sheet_plan(layout, page_count):
+    """Where every diary page goes: a list of sheet sides (front, back, front, back, ...),
+    each a list of Placements.
+
+    Each leaf of the diary has two pages: page 2n+1 on its front and 2n+2 on its back.
+    The leaves are spread for cut-and-stack: slot k of sheet s holds leaf k*sheets + s.
+    So when the whole pile is cut along the crop marks, the piles stacked A on top of B
+    (on top of C ...) give the leaves in order, without any sorting.
+
+    The sheets are printed two-sided and flipped on their long edge, so the back of a slot
+    is at the same height but mirrored left to right. Pages turned clockwise on the front
+    are turned counterclockwise on the back, so both tops end up at the same edge of the leaf."""
+    sheets = sheet_count(layout, page_count)
+    first_left, _, _, first_top = block_box(layout)
+    sides = []
+    for sheet in range(sheets):
+        front, back = [], []
+        for slot in range(layout.per_side):
+            leaf = slot * sheets + sheet
+            left = first_left + (slot % layout.cols) * (layout.width + SHEET_GUTTER)
+            top = first_top - (slot // layout.cols) * (layout.height + SHEET_GUTTER)
+            box = (left, top - layout.height, left + layout.width, top)
+            behind = (SHEET_WIDTH - box[2], box[1], SHEET_WIDTH - box[0], box[3])
+            if 2 * leaf + 1 <= page_count:
+                front.append(Placement(slot, 2 * leaf + 1, box, -90 if layout.turned else 0))
+            if 2 * leaf + 2 <= page_count:
+                back.append(Placement(slot, 2 * leaf + 2, behind, 90 if layout.turned else 0))
+        sides += [front, back]
+    return sides
+
+
+def mm(value):
+    return f"{value:.2f}"
+
+
+def crop_marks(box):
+    """Short lines continuing the edges of a page past its corners."""
+    left, bottom, right, top = box
+    gap, length = MARK_GAP, MARK_LENGTH
+    marks = []
+    for y in (bottom, top):
+        marks.append(f"\\put({mm(left - gap - length)},{mm(y)}){{\\line(1,0){{{mm(length)}}}}}")
+        marks.append(f"\\put({mm(right + gap)},{mm(y)}){{\\line(1,0){{{mm(length)}}}}}")
+    for x in (left, right):
+        marks.append(f"\\put({mm(x)},{mm(bottom - gap - length)}){{\\line(0,1){{{mm(length)}}}}}")
+        marks.append(f"\\put({mm(x)},{mm(top + gap)}){{\\line(0,1){{{mm(length)}}}}}")
+    return "".join(marks)
+
+
+def sheets_latex(layout, page_count, pages_pdf, title):
+    """A4 sheets with the pages of pages_pdf (one diary page per PDF page) laid out by
+    sheet_plan, with crop marks and pile letters on the fronts."""
+    sides = sheet_plan(layout, page_count)
+    piles = PILES[:layout.per_side]
+    block = block_box(layout)
+    below, above = block[1] / 2, (block[3] + SHEET_HEIGHT) / 2  # middle of the bottom and top margins
+    lines = [
+        "\\documentclass{article}",
+        "\\usepackage[a4paper,margin=0mm]{geometry}",
+        "\\usepackage{graphicx}",
+        "\\usepackage{eso-pic}",
+        "\\pagestyle{empty}",
+        "\\begin{document}",
+        "\\sffamily",
+    ]
+    for number, side in enumerate(sides):
+        front = number % 2 == 0
+        items = ["\\setlength{\\unitlength}{1mm}\\linethickness{0.25pt}"]
+        for place in side:
+            left, bottom, right, top = place.box
+            middle = (bottom + top) / 2
+            items.append(f"\\put({mm((left + right) / 2)},{mm(middle)}){{\\makebox(0,0){{"
+                         f"\\includegraphics[page={place.page},angle={place.angle}]{{{pages_pdf}}}}}}}")
+            if front:
+                items.append(crop_marks(place.box))
+                on_right = layout.cols > 1 and place.slot % layout.cols == layout.cols - 1
+                x = right + 9 if on_right else left - 9
+                items.append(f"\\put({mm(x)},{mm(middle)}){{\\makebox(0,0){{\\small {piles[place.slot]}}}}}")
+        if front:
+            items.append(f"\\put({mm(SHEET_WIDTH / 2)},{mm(below)}){{\\makebox(0,0){{\\scriptsize "
+                         f"{title}: sheet {number // 2 + 1} of {len(sides) // 2}}}}}")
+        if number == 0:
+            items.append(f"\\put({mm(SHEET_WIDTH / 2)},{mm(above)}){{\\makebox(0,0){{\\scriptsize\\shortstack{{"
+                         "Print two-sided, flipping on the long edge, at 100\\,\\% size.\\\\"
+                         f"Cut along the crop marks, then stack the piles with A on top: {', '.join(piles)}.}}}}}}")
+        lines.append("\\AddToShipoutPictureBG*{\\AtPageLowerLeft{" + "".join(items) + "}}")
+        lines.append("\\null\\newpage")
+    lines.append("\\end{document}")
+    return "\n".join(lines) + "\n"
+
+
+def printing_instructions(layout, page_count):
+    piles = PILES[:layout.per_side]
+    return (f"{sheet_count(layout, page_count)} sheets, {layout.per_side} pages on each side. Print them "
+            "two-sided, flipping on the long edge\n(the usual setting), at 100 % size. Cut the whole pile "
+            f"along the crop marks, then stack the piles\n{', '.join(piles)} with A on top.")
 
 # ---------------------------------------------------------------------------
 # Typesetting
@@ -698,29 +870,55 @@ def latex_error(log, output):
     return "\n".join(lines[-15:])
 
 
-def typeset(tex, out_folder):
-    """Run XeLaTeX on the .tex file and move the PDF to out_folder. Returns the PDF, or None."""
+def run_xelatex(tex):
+    """Typeset a .tex file where it is. Returns the number of pages, or None after showing
+    what went wrong."""
     xelatex = shutil.which("xelatex") or (MACTEX_XELATEX if os.path.exists(MACTEX_XELATEX) else None)
     if not xelatex:
         print("I can't find XeLaTeX. Install MacTeX, or use --tex-only to just write the LaTeX file.",
               file=sys.stderr)
         return None
-    built = tex.with_suffix(".pdf")
+    built, log = tex.with_suffix(".pdf"), tex.with_suffix(".log")
     built.unlink(missing_ok=True)
-    print("Typesetting with XeLaTeX ...")
     result = subprocess.run(
         [xelatex, "-interaction=nonstopmode", "-halt-on-error", tex.name],
         cwd=tex.parent, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors="replace",
     )
     if result.returncode != 0 or not built.exists():
-        log = tex.with_suffix(".log")
         print("\nXeLaTeX stopped with an error:\n", file=sys.stderr)
         print(latex_error(log, result.stdout), file=sys.stderr)
         print(f"\nThe whole log is in {log}", file=sys.stderr)
         return None
-    pdf = out_folder / built.name
-    os.replace(built, pdf)
+    try:
+        text = log.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        text = result.stdout
+    # The log wraps long lines, so join them before looking for "Output written on x.pdf (107 pages".
+    match = re.search(r"Output written on .*?\((\d+) pages?", text.replace("\n", ""))
+    return int(match.group(1)) if match else 0
+
+
+def typeset(tex, out_folder):
+    """Typeset a .tex file and move the PDF to out_folder. Returns the PDF, or None."""
+    if run_xelatex(tex) is None:
+        return None
+    pdf = out_folder / tex.with_suffix(".pdf").name
+    os.replace(tex.with_suffix(".pdf"), pdf)
     return pdf
+
+
+def remove_build_files(build, name, keep):
+    """After a successful run, delete this diary's LaTeX files (.tex, .aux, .log, .out and
+    in-between PDFs) from build/, and build/ itself if that empties it. After a failed run
+    they stay, so the log can be read."""
+    for path in build.glob(f"{name}*"):
+        if path.is_file() and path.resolve() != keep.resolve():
+            path.unlink()
+    if build.resolve() != keep.parent.resolve():
+        try:
+            build.rmdir()
+        except OSError:
+            pass  # other files are still in there
 
 # ---------------------------------------------------------------------------
 # Command line and questions
@@ -763,6 +961,9 @@ def parse_arguments(argv):
     colors.add_argument("--bw", dest="color", action="store_const", const="bw",
                         help="black and white" + (" (default)" if DEFAULTS["color"] == "bw" else ""))
     parser.set_defaults(color=DEFAULTS["color"])
+    parser.add_argument("--save-paper", action=argparse.BooleanOptionalAction, default=DEFAULTS["save_paper"],
+                        help="put several pages on each A4 sheet, to print two-sided and cut "
+                             "(pocket: 4, personal and a6: 2; a5 doesn't fit)")
     parser.add_argument("--holidays", choices=HOLIDAY_CALENDARS,
                         help="built-in red days and named days (default: se for Swedish, otherwise none)")
     parser.add_argument("--init", action="store_true",
@@ -806,6 +1007,8 @@ def shortcut(args):
         words += ["--lang", args.language]
     if args.color != DEFAULTS["color"]:
         words.append(f"--{args.color}")
+    if args.save_paper != DEFAULTS["save_paper"]:
+        words.append("--save-paper" if args.save_paper else "--no-save-paper")
     if args.tex_only:
         words.append("--tex-only")
     return " ".join(words)
@@ -820,6 +1023,10 @@ def ask_questions():
     args.paper = ask("What format should I use for your insert", list(PAPERS), DEFAULTS["paper"])
     args.color = ask("Should I use color or black & white mode", ["color", "bw"], DEFAULTS["color"])
     args.layout = ask("What layout should I use for your insert", list(LAYOUTS), DEFAULTS["layout"])
+    sheet = sheet_layout(args.paper)
+    args.save_paper = bool(sheet) and ask(
+        f"Should I save paper by putting {sheet.per_side} pages on each A4 sheet", ["yes", "no"],
+        "yes" if DEFAULTS["save_paper"] else "no") == "yes"
     args.language = ask("What language should I use", list(LANGUAGES), DEFAULTS["language"])
     args.year = ask_year(next_year())
     args.tex_only = ask("Shall I typeset it to PDF as well", ["yes", "no"], "yes") == "no"
@@ -831,6 +1038,11 @@ def make_diary(args, folder):
     if args.init:
         return write_starter_dates(folder, args.language, args.year)
     holidays = args.holidays or ("se" if args.language == "sv" else "none")
+    if holidays == "se" and args.year < FIRST_SWEDISH_YEAR:
+        print(f"The built-in Swedish calendar follows the holiday law as it has been since {FIRST_SWEDISH_YEAR}; "
+              f"{args.year} had other red days.\nAdd --holidays none and mark that year's red days with * "
+              "in your dates file.", file=sys.stderr)
+        return 1
     warn_about_old_files(folder)
     try:
         notes = load_notes(args.year, holidays, folder, weeknotes=args.layout == "wg")
@@ -847,19 +1059,40 @@ def make_diary(args, folder):
         diary.print_list()
         return 0
 
-    print(f"Making the {args.year} diary: {args.paper}, {args.layout}, {args.language}, {args.color}")
+    sheet = sheet_layout(args.paper) if args.save_paper else None
+    if args.save_paper and sheet is None:
+        print(f"Only one {args.paper} page fits on an A4 sheet, so it's one page per sheet as usual.")
+    if sheet and args.tex_only:
+        print("Saving paper needs the typeset pages, so --tex-only gives the usual one page per sheet.")
+        sheet = None
+
+    per_sheet = f", {sheet.per_side} pages per A4 side" if sheet else ""
+    print(f"Making the {args.year} diary: {args.paper}, {args.layout}, {args.language}, {args.color}{per_sheet}")
     build = folder / BUILD_DIR
     build.mkdir(exist_ok=True)
-    tex = build / f"diary-{args.paper}-{args.year}-{args.language}.tex"
-    tex.write_text(diary.latex(), encoding="utf-8")
+    name = f"diary-{args.paper}-{args.year}-{args.language}"
+    tex = build / (f"{name}-pages.tex" if sheet else f"{name}.tex")
+    tex.write_text(diary.latex(trimmed=bool(sheet)), encoding="utf-8")
     print(f"Wrote {tex.relative_to(folder)}")
     if args.tex_only:
         return 0
 
+    print("Typesetting with XeLaTeX ...")
+    if sheet:
+        page_count = run_xelatex(tex)
+        if page_count is None:
+            return 1
+        sheets_tex = build / f"{name}-{sheet.per_side}up.tex"
+        sheets_tex.write_text(sheets_latex(sheet, page_count, tex.with_suffix(".pdf").name,
+                                           f"Alfie {args.year}, {args.paper}"), encoding="utf-8")
+        tex = sheets_tex
     pdf = typeset(tex, folder)
     if pdf is None:
         return 1
+    remove_build_files(build, name, keep=pdf)
     print(f"Done: {pdf.name}")
+    if sheet:
+        print(printing_instructions(sheet, page_count))
     if not args.no_open and sys.platform == "darwin":
         subprocess.run(["open", str(pdf)], check=False)
     return 0
