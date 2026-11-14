@@ -1,5 +1,0 @@
-# Dates for 2027 only. Same format as notes.txt.
-
-# Carried over from holidays-2027-sv.txt, which had Nyårsafton as a red day
-# (2026 didn't). Delete this line if that wasn't on purpose.
-* 31 december: Nyårsafton

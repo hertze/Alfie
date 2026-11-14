@@ -39,11 +39,11 @@ DEFAULTS = {
 }
 AUTHOR = "Joakim Hertze"
 
-# Files Alfie reads from the folder you run it in.
-NOTES_FILE = "notes.txt"                      # your dates, every year
-YEAR_NOTES_FILE = "notes-{year}.txt"          # your dates, one year only
-WEEKNOTES_FILE = "weeknotes.txt"              # week notes (layout wg), every year
-YEAR_WEEKNOTES_FILE = "weeknotes-{year}.txt"  # week notes (layout wg), one year only
+# Files Alfie reads from the folder you run it in, as .md or .txt (if both are
+# there, the .md one is used). Lines under a heading with a year ("## 2027") are
+# for that year only; all others come back every year.
+DATES_FILES = ("dates.md", "dates.txt")              # your dates
+WEEKNOTES_FILES = ("weeknotes.md", "weeknotes.txt")  # week notes for layout wg
 
 # The PDF ends up in the folder you run Alfie in. The LaTeX file and
 # XeLaTeX's working files (.aux, .log, .out) go in this subfolder.
@@ -184,16 +184,19 @@ HOLIDAY_CALENDARS = {
 }
 
 # ---------------------------------------------------------------------------
-# Your notes: notes.txt, notes-YEAR.txt, weeknotes.txt, weeknotes-YEAR.txt
+# Your dates and week notes: dates.md/.txt and weeknotes.md/.txt
 # ---------------------------------------------------------------------------
 
 # The order texts are listed in when a day has several:
 # red days first, then your own notes, then the other built-in days.
 RANK_RED, RANK_YOURS, RANK_BUILT_IN = 0, 1, 2
 
-NOTE_LINE = re.compile(r"(\*)?\s*(\d{1,2})\.?\s+([^\W\d_]+)\.?\s*(?::(.*))?")
-WEEKNOTE_LINE = re.compile(r"(\d{1,2})\s*:(.*)")
-OLD_FILE = re.compile(r"(holidays|notes|weeknotes)-\d{4}-[a-z]{2}\.txt")
+# A line may start with a Markdown list dash ("- 21 januari: ..."). A * first means red.
+NOTE_LINE = re.compile(r"(?:[-+]\s+)?(\*)?\s*(\d{1,2})\.?\s+([^\W\d_]+)\.?\s*(?::(.*))?")
+WEEKNOTE_LINE = re.compile(r"(?:[-+*]\s+)?(\d{1,2})\s*:(.*)")
+OLD_FILE = re.compile(r"(holidays|notes|weeknotes)-\d{4}(-[a-z]{2})?\.txt|notes\.(txt|md)")
+HEADING = re.compile(r"#+\s*(.*?)\s*#*")
+EVERY_YEAR = {"every year", "varje år", "jedes jahr"}  # headings that end a year section
 
 
 def _month_numbers():
@@ -249,20 +252,32 @@ def plural(count, word):
 
 
 def read_lines(path, problems):
-    """(line number, text) for every line that isn't empty or a # comment."""
+    """(line number, text, year) for every line that isn't empty or a # comment. year comes
+    from the nearest heading above that is a year ("## 2027"); None means every year.
+    A heading "## Every year" (or "Varje år") goes back to every year."""
     try:
         text = path.read_text(encoding="utf-8-sig")
     except UnicodeDecodeError:
         problems.append(f"{path.name}: please save it as UTF-8 text")
         return []
-    lines = [(number, line.strip()) for number, line in enumerate(text.splitlines(), start=1)]
-    return [(number, line) for number, line in lines if line and not line.startswith("#")]
+    lines, year = [], None
+    for number, line in enumerate(text.splitlines(), start=1):
+        line = line.strip()
+        if line.startswith("#"):
+            title = HEADING.fullmatch(line).group(1)
+            if re.fullmatch(r"\d{4}", title) and 1583 <= int(title) <= 9998:
+                year = int(title)
+            elif title.casefold() in EVERY_YEAR:
+                year = None
+        elif line:
+            lines.append((number, line, year))
+    return lines
 
 
-def read_notes(path, year, problems):
-    """[(month, day, text, red)] from a notes file. year is None for notes.txt (every year)."""
+def read_dates(path, problems):
+    """[(year, month, day, text, red)] from a dates file. year is None for every year."""
     notes = []
-    for number, line in read_lines(path, problems):
+    for number, line, year in read_lines(path, problems):
         where = f"{path.name}, line {number}"
         match = NOTE_LINE.fullmatch(line)
         if not match:
@@ -275,21 +290,21 @@ def read_notes(path, year, problems):
             problems.append(f"{where}: '{month_name}' isn't a month I know")
             continue
         try:
-            date(year or 2000, month, int(day))  # 2000 was a leap year, so 29 februari is fine in notes.txt
+            date(year or 2000, month, int(day))  # 2000 was a leap year, so 29 februari is fine every year
         except ValueError:
             problems.append(f"{where}: there is no {int(day)} {month_name}" + (f" in {year}" if year else ""))
             continue
         if not text and not star:
             problems.append(f"{where}: nothing after the date (start the line with * to only make the day red)")
             continue
-        notes.append((month, int(day), text, bool(star)))
+        notes.append((year, month, int(day), text, bool(star)))
     return notes
 
 
 def read_weeknotes(path, problems):
-    """[(week number, text)] from a week notes file."""
+    """[(year, week number, text)] from a week notes file. year is None for every year."""
     notes = []
-    for number, line in read_lines(path, problems):
+    for number, line, year in read_lines(path, problems):
         where = f"{path.name}, line {number}"
         match = WEEKNOTE_LINE.fullmatch(line)
         if not match or not match.group(2).strip():
@@ -297,8 +312,17 @@ def read_weeknotes(path, problems):
         elif not 1 <= int(match.group(1)) <= 53:
             problems.append(f"{where}: there is no week {int(match.group(1))}")
         else:
-            notes.append((int(match.group(1)), match.group(2).strip()))
+            notes.append((year, int(match.group(1)), match.group(2).strip()))
     return notes
+
+
+def find_file(folder, names):
+    """The first of names (dates.md, dates.txt) that's in the folder, or None."""
+    found = [folder / name for name in names if (folder / name).exists()]
+    if len(found) > 1:
+        print(f"Note: both {found[0].name} and {found[1].name} are here. "
+              f"I'm reading {found[0].name} and ignoring {found[1].name}.")
+    return found[0] if found else None
 
 
 def load_notes(year, holidays, folder, weeknotes=False):
@@ -310,47 +334,79 @@ def load_notes(year, holidays, folder, weeknotes=False):
     def add(day, text, red, rank):
         days.setdefault(day, DayInfo()).add(text, red, rank)
 
-    every_year = []
-    path = folder / NOTES_FILE
-    if path.exists():
-        every_year = read_notes(path, None, problems)
-        files.append(f"{path.name} ({plural(len(every_year), 'note')})")
+    notes = []
+    path = find_file(folder, DATES_FILES)
+    if path:
+        notes = read_dates(path, problems)
+        every = sum(1 for note in notes if note[0] is None)
+        only = sum(1 for note in notes if note[0] == year)
+        files.append(f"{path.name} ({every} every year, {only} for {year} only)")
 
     for this_year in (year - 1, year, year + 1):
         for day, name, red in HOLIDAY_CALENDARS[holidays](this_year):
             add(day, name, red, RANK_RED if red else RANK_BUILT_IN)
-        for month, day, text, red in every_year:
+        for note_year, month, day, text, red in notes:
+            if note_year not in (None, this_year):
+                continue
             if (month, day) == (2, 29) and not calendar.isleap(this_year):
-                day = 28  # a note on 29 februari shows on 28 februari in other years
+                day = 28  # an every-year note on 29 februari shows on 28 februari in other years
             add(date(this_year, month, day), text, red, RANK_RED if red else RANK_YOURS)
-        path = folder / YEAR_NOTES_FILE.format(year=this_year)
-        if path.exists():
-            notes = read_notes(path, this_year, problems)
-            for month, day, text, red in notes:
-                add(date(this_year, month, day), text, red, RANK_RED if red else RANK_YOURS)
-            if this_year == year:
-                files.append(f"{path.name} ({plural(len(notes), 'note')})")
 
     week_texts = {}
-    if weeknotes:
-        for path in (folder / WEEKNOTES_FILE, folder / YEAR_WEEKNOTES_FILE.format(year=year)):
-            if path.exists():
-                notes = read_weeknotes(path, problems)
-                for week, text in notes:
-                    week_texts.setdefault(week, []).append(text)
-                files.append(f"{path.name} ({plural(len(notes), 'week note')})")
+    path = find_file(folder, WEEKNOTES_FILES) if weeknotes else None
+    if path:
+        used = [(week, text) for note_year, week, text in read_weeknotes(path, problems)
+                if note_year in (None, year)]
+        for week, text in used:
+            week_texts.setdefault(week, []).append(text)
+        files.append(f"{path.name} ({plural(len(used), 'week note')})")
 
     if problems:
         raise NotesError(problems)
     return Notes(days, week_texts, files)
 
 
+def starter_dates(language, year):
+    """A dates file to start from, with the format explained and examples commented out."""
+    months = LANGUAGES[language]["months"]
+    return f"""# Your own dates for Alfie's diary.
+#
+# One date per line:   <day> <month>: <text>
+# Start a line with * to make the day red. Other lines starting with # are skipped.
+# Holidays, Easter, Midsummer and so on are built in, so they don't go here.
+#
+# Dates at the top come back every year, like birthdays. Dates under a heading
+# with a year, like the one below, are for that year only.
+#
+# Check what you'll get with:  ./alfie.py {year} --list
+# Remove the # in front of an example to use it, or write your own.
+
+# 14 {months[2]}: Example: a birthday
+
+## {year}
+
+# * 2 {months[0]}: Example: a day off, red
+# 12 {months[5]}: Example: a trip
+"""
+
+
+def write_starter_dates(folder, language, year):
+    existing = find_file(folder, DATES_FILES)
+    if existing:
+        print(f"There's already a {existing.name} here, so I've left it alone.", file=sys.stderr)
+        return 1
+    path = folder / "dates.txt"  # rename it dates.md to edit it as Markdown
+    path.write_text(starter_dates(language, year), encoding="utf-8")
+    print(f"Wrote {path.name}. Add your dates, then check them with: ./alfie.py {year} --list")
+    return 0
+
+
 def warn_about_old_files(folder):
     old = sorted(path.name for path in folder.iterdir() if OLD_FILE.fullmatch(path.name))
     if old:
-        print(f"Note: {', '.join(old)} {'is' if len(old) == 1 else 'are'} in the old format and no longer read.\n"
-              f"      Holidays are built in now. Your own dates go in {NOTES_FILE} or "
-              f"{YEAR_NOTES_FILE.format(year='YEAR')}; see README.md.")
+        print(f"Note: {', '.join(old)} {'is' if len(old) == 1 else 'are'} no longer read.\n"
+              f"      Holidays are built in now. Your own dates go in {' or '.join(DATES_FILES)}, "
+              f"under a heading like '## 2027' if they're for one year only; see README.md.")
 
 # ---------------------------------------------------------------------------
 # LaTeX
@@ -709,6 +765,8 @@ def parse_arguments(argv):
     parser.set_defaults(color=DEFAULTS["color"])
     parser.add_argument("--holidays", choices=HOLIDAY_CALENDARS,
                         help="built-in red days and named days (default: se for Swedish, otherwise none)")
+    parser.add_argument("--init", action="store_true",
+                        help="write a starter dates.txt to fill in, then stop")
     parser.add_argument("--list", action="store_true",
                         help="show the year's red days and notes instead of making the diary")
     parser.add_argument("--tex-only", action="store_true", help="write the LaTeX file but don't typeset it")
@@ -758,7 +816,7 @@ def ask_questions():
     print("\n---------------------------------------------------------\n")
     print("\nHello,")
     print("\nI have some questions before we begin:")
-    args = argparse.Namespace(holidays=None, list=False, no_open=False)
+    args = argparse.Namespace(holidays=None, init=False, list=False, no_open=False)
     args.paper = ask("What format should I use for your insert", list(PAPERS), DEFAULTS["paper"])
     args.color = ask("Should I use color or black & white mode", ["color", "bw"], DEFAULTS["color"])
     args.layout = ask("What layout should I use for your insert", list(LAYOUTS), DEFAULTS["layout"])
@@ -770,6 +828,8 @@ def ask_questions():
 
 
 def make_diary(args, folder):
+    if args.init:
+        return write_starter_dates(folder, args.language, args.year)
     holidays = args.holidays or ("se" if args.language == "sv" else "none")
     warn_about_old_files(folder)
     try:
@@ -780,8 +840,8 @@ def make_diary(args, folder):
         return 1
 
     print("Built-in calendar: " + ("Swedish" if holidays == "se" else "none (only Sundays are red)"))
-    print("Your notes: " + (", ".join(notes.files) if notes.files
-                            else f"none (no {NOTES_FILE} or {YEAR_NOTES_FILE.format(year=args.year)})"))
+    print("Your files: " + (", ".join(notes.files) if notes.files
+                            else f"none (no {' or '.join(DATES_FILES)}; ./alfie.py --init makes one to fill in)"))
     diary = Diary(args.year, args.paper, args.color, args.layout, args.language, notes)
     if args.list:
         diary.print_list()

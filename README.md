@@ -6,7 +6,11 @@ Alfie works out the Swedish holidays and other named days for every year by itse
 
 ## Quick start
 
-From the terminal, in the Alfie folder:
+From the terminal, in the Alfie folder. On a new install, start by making a file for your own dates (see [Red days and notes](#red-days-and-notes)):
+
+    ./alfie.py --init
+
+Then:
 
     ./alfie.py 2027
 
@@ -24,6 +28,7 @@ Run `./alfie.py` with no arguments at all to be asked step by step instead. At t
 | `--lang` | `sv`, `de` or `en` | `sv` |
 | `--color` / `--bw` | red days and notes in red, or all black | `--bw` |
 | `--holidays` | `se` (the built-in Swedish calendar) or `none` | `se` for Swedish, otherwise `none` |
+| `--init` | writes a starter `dates.txt` to fill in (never overwrites your dates) | |
 | `--list` | shows the year's red days and notes instead of making the diary | |
 | `--tex-only` | writes the LaTeX file but doesn't typeset it | |
 | `--no-open` | doesn't open the PDF afterwards | |
@@ -54,24 +59,29 @@ Sundays are always red. The built-in Swedish calendar adds, for any year:
 
 To change that list, edit `swedish_calendar()` in `alfie.py`.
 
-Your own dates go in plain text files in the folder you run Alfie from:
+Your own dates go in `dates.txt` or `dates.md`, in the folder you run Alfie from. They work the same; use `dates.md` if you like editing it as Markdown. If both are there, Alfie reads `dates.md` and tells you it's ignoring `dates.txt`. To get a starter file that explains the format:
 
-- `notes.txt`: dates that come back every year, like birthdays. You write it once.
-- `notes-2027.txt`: dates for 2027 only. Optional.
+    ./alfie.py --init
 
-One date per line: day, month, a colon and the text. Start a line with `*` to make the day red. Lines starting with `#` are skipped.
+One date per line: day, month, a colon and the text. Start a line with `*` to make the day red. Dates at the top come back every year, like birthdays. Dates under a heading with a year are for that year only:
 
-    # notes.txt
     21 januari: Annas födelsedag
     25 augusti: Bröllopsdag
 
-    # notes-2027.txt
+    ## 2027
     * 31 december: Nyårsafton
     14 april: Tandläkare 08.30
 
+    ## 2028
+    3 mars: Flytt
+
+A year section lasts until the next heading with a year, or `## Every year` (`## Varje år`), which goes back to dates for every year. Other lines starting with `#` are skipped, so you can use them for comments.
+
+Lines can also be written as a Markdown list, `- 21 januari: Annas födelsedag`. Note that a `*` at the start still means a red day, so use `-` for list items.
+
 - Month names can be Swedish, English or German, written out or shortened to three letters (`21 jan`).
 - A day can have any number of notes. They're joined with commas: red days first, then your notes, then the other built-in days.
-- A `29 februari` in `notes.txt` shows on 28 februari in years that don't have one.
+- An every-year `29 februari` shows on 28 februari in years that don't have one.
 - If a line can't be read (`31 april`, a misspelt month, a missing colon), Alfie stops and lists every such line with its file and line number.
 
 Check what you'll get before you print:
@@ -80,7 +90,7 @@ Check what you'll get before you print:
 
 ### Week notes
 
-The `wg` layout can print a text, such as a quote, on each week's gratitude page. Put them in `weeknotes.txt` (every year) or `weeknotes-2027.txt` (2027 only), one per line, starting with the week number:
+The `wg` layout can print a text, such as a quote, on each week's gratitude page. Put them in `weeknotes.txt` (or `weeknotes.md`), one per line, starting with the week number. Year headings work the same way as for your dates:
 
     1: Two roads diverged in a wood, and I--I took the one less traveled by, And that has made all the difference. --- Robert Frost
     3: Your mind is for having ideas, not holding them. --- David Allen
