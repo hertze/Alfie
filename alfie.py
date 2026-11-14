@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # A L F I E
-# version 3.1
+# version 3.0
 #
 # by Joakim Hertze
 #
@@ -40,6 +40,8 @@ DEFAULTS = {
     "layout": "w2pwf",    # one of LAYOUTS below
     "language": "sv",     # sv, de or en
     "save_paper": False,  # True: 2 or 4 pages on each A4 sheet (the word save-paper)
+    "back_offset": 1.0,   # mm the back of each sheet is moved down, for a printer that prints
+                          # the back side higher than the front (the word back=+1.0)
 }
 AUTHOR = "Joakim Hertze"
 
@@ -63,7 +65,7 @@ LAYOUTS = {
 }
 
 PAPERS = {  # millimetres
-    "pocket": {"width": "83", "height": "122", "margin": "4", "left": "12", "top": "3", "bottom": "4"},
+    "pocket": {"width": "83", "height": "122", "margin": "3", "left": "13", "top": "1", "bottom": "4"},
     "personal": {"width": "97", "height": "173", "margin": "3", "left": "11", "top": "2", "bottom": "3.5"},
     "a6": {"width": "107", "height": "150", "margin": "4", "left": "13", "top": "2", "bottom": "3.5"},
     "a5": {"width": "150", "height": "212", "margin": "5.5", "left": "13.5", "top": "5.5", "bottom": "10"},
@@ -461,7 +463,7 @@ class Diary:
         self.strings = LANGUAGES[language]
         self.notes = notes
 
-    def latex(self, trimmed=False):
+    def latex(self, trimmed=False, back_offset=0.0):
         """The whole diary. trimmed: each PDF page is just the diary page, without the A4
         sheet and crop marks around it (for laying several on a sheet)."""
         layouts = {
@@ -472,7 +474,8 @@ class Diary:
             "1dp": self.day_per_page,
             "wg": self.week_gold,
         }
-        return self.preamble(trimmed) + self.opening() + layouts[self.layout]() + "\\end{document}\n\n"
+        return (self.preamble(trimmed, back_offset) + self.opening() + layouts[self.layout]()
+                + "\\end{document}\n\n")
 
     # --- Days and weeks
 
@@ -511,7 +514,7 @@ class Diary:
 
     # --- Building blocks
 
-    def preamble(self, trimmed=False):
+    def preamble(self, trimmed=False, back_offset=0.0):
         paper = PAPERS[self.paper]
         fill = "red!60!black" if self.color == "color" else "black"
         notes = "\\textcolor{red!60!black}{#1}" if self.color == "color" else "#1"
@@ -548,6 +551,16 @@ class Diary:
             "\\pagenumbering{gobble}",
             "",
         ]
+        if back_offset and not trimmed:
+            # Every second page is the back of a sheet. Move it down by back_offset (page and
+            # crop marks together) when it's written out, to make up for the printer.
+            lines[-1:-1] = [
+                "\\newcount\\AlfieSide\\newdimen\\AlfieFrontVoffset",
+                "\\AddToHook{shipout/before}{\\global\\advance\\AlfieSide 1 "
+                "\\ifnum\\AlfieSide=1 \\global\\AlfieFrontVoffset=\\voffset\\fi "
+                "\\ifodd\\AlfieSide \\global\\voffset=\\AlfieFrontVoffset "
+                f"\\else\\global\\voffset=\\dimexpr\\AlfieFrontVoffset+{back_offset:.2f}mm\\relax\\fi}}",
+            ]
         return "\n".join(lines)
 
     def opening(self):
@@ -753,7 +766,7 @@ def block_box(layout):
     return left, bottom, left + width, bottom + height
 
 
-def sheet_plan(layout, page_count):
+def sheet_plan(layout, page_count, back_offset=0.0):
     """Where every diary page goes: a list of sheet sides (front, back, front, back, ...),
     each a list of Placements.
 
@@ -764,7 +777,8 @@ def sheet_plan(layout, page_count):
 
     The sheets are printed two-sided and flipped on their long edge, so the back of a slot
     is at the same height but mirrored left to right. Pages turned clockwise on the front
-    are turned counterclockwise on the back, so both tops end up at the same edge of the leaf."""
+    are turned counterclockwise on the back, so both tops end up at the same edge of the leaf.
+    back_offset (mm) moves everything on the back down, for a printer that prints it higher."""
     sheets = sheet_count(layout, page_count)
     first_left, _, _, first_top = block_box(layout)
     sides = []
@@ -775,7 +789,7 @@ def sheet_plan(layout, page_count):
             left = first_left + (slot % layout.cols) * (layout.width + SHEET_GUTTER)
             top = first_top - (slot // layout.cols) * (layout.height + SHEET_GUTTER)
             box = (left, top - layout.height, left + layout.width, top)
-            behind = (SHEET_WIDTH - box[2], box[1], SHEET_WIDTH - box[0], box[3])
+            behind = (SHEET_WIDTH - box[2], box[1] - back_offset, SHEET_WIDTH - box[0], box[3] - back_offset)
             if 2 * leaf + 1 <= page_count:
                 front.append(Placement(slot, 2 * leaf + 1, box, -90 if layout.turned else 0))
             if 2 * leaf + 2 <= page_count:
@@ -825,10 +839,10 @@ def label_span(layout):
     return max(zip(edges, edges[1:]), key=lambda span: span[1] - span[0])
 
 
-def sheets_latex(layout, page_count, pages_pdf, title):
+def sheets_latex(layout, page_count, pages_pdf, title, back_offset=0.0):
     """A4 sheets with the pages of pages_pdf (one diary page per PDF page) laid out by
     sheet_plan, with crop marks and pile letters on the fronts."""
-    sides = sheet_plan(layout, page_count)
+    sides = sheet_plan(layout, page_count, back_offset)
     piles = PILES[:layout.per_side]
     block = block_box(layout)
     below, above = block[1] / 2, (block[3] + SHEET_HEIGHT) / 2  # middle of the bottom and top margins
@@ -955,7 +969,7 @@ def remove_build_files(build, name, keep):
 # Words: what you type, after alfie or in Alfie's shell
 # ---------------------------------------------------------------------------
 
-VERSION = "3.1"
+VERSION = "3.0"
 FOLDER = Path(__file__).resolve().parent  # Alfie's files live next to alfie.py, wherever you run it from
 
 # Where "alfie install" puts the alfie command: the first of these that is on PATH and writable.
@@ -977,6 +991,7 @@ class Settings:
     holidays: str = ""  # "se" or "none"; "" means the Swedish calendar for Swedish diaries
     tex_only: bool = False
     open_pdf: bool = True
+    back_offset: float = DEFAULTS["back_offset"]  # mm, + moves the back of each sheet down
 
     @property
     def calendar(self):
@@ -988,6 +1003,8 @@ class Settings:
         if self.save_paper:
             sheet = sheet_layout(self.paper)
             parts.append(f"{sheet.per_side} pages per sheet" if sheet else f"save-paper (doesn't fit {self.paper})")
+        if self.back_offset:
+            parts.append(f"back {signed_mm(self.back_offset)} mm")
         if self.calendar == "none":
             parts.append("no holidays")
         if self.tex_only:
@@ -1004,6 +1021,8 @@ class Settings:
                   if getattr(self, name) != getattr(usual, name)]
         if self.save_paper != usual.save_paper:
             words.append("save-paper" if self.save_paper else "no-save-paper")
+        if self.back_offset != usual.back_offset:
+            words.append(f"back={signed_mm(self.back_offset)}")
         if self.holidays:
             words.append("holidays" if self.holidays == "se" else "no-holidays")
         if self.tex_only:
@@ -1014,6 +1033,22 @@ class Settings:
 
 
 LANGUAGE_NAMES = {"sv": "Swedish", "de": "German", "en": "English"}
+BACK_WORD = re.compile(r"back=?([+-]?\d+(?:[.,]\d+)?)")  # back=+1.0, back=-0.5, back+0,9 ...
+MAX_BACK_OFFSET = 10.0  # mm
+
+
+def signed_mm(value):
+    """+1.0, -0.5, +0.95 or 0."""
+    if not value:
+        return "0"
+    text = f"{value:+.2f}".rstrip("0")
+    return text + "0" if text.endswith(".") else text
+
+
+def back_meaning(value):
+    if not value:
+        return "the back of each sheet isn't moved"
+    return f"the back of each sheet moved {abs(value):g} mm {'down' if value > 0 else 'up'}"
 
 
 def setting_rows(s):
@@ -1034,6 +1069,7 @@ def setting_rows(s):
         ("Language", s.language, LANGUAGE_NAMES[s.language]),
         ("Colour", s.color, "red days and notes in red" if s.color == "color" else "black and white"),
         ("Save paper", "on" if s.save_paper else "off", saving),
+        ("Back side", f"{signed_mm(s.back_offset)} mm", back_meaning(s.back_offset)),
         ("Holidays", "on" if s.calendar == "se" else "off",
          "the Swedish calendar" if s.calendar == "se" else "only Sundays are red"),
         ("Output", "tex-only" if s.tex_only else "pdf", "only the LaTeX file" if s.tex_only else "a typeset PDF"),
@@ -1046,7 +1082,7 @@ def settings_table(settings, before=None):
     changed. Output and Open PDF are left out while they're the usual pdf and yes."""
     rows = setting_rows(settings)
     if before is None:
-        rows = rows[:7] + [row for row in rows[7:] if row[1] not in ("pdf", "yes")]
+        rows = rows[:8] + [row for row in rows[8:] if row[1] not in ("pdf", "yes")]
     else:
         rows = [row for row, old in zip(rows, setting_rows(before)) if row != old]
     return "\n".join(f"  {label:<11}{value:<10}{meaning}".rstrip() for label, value, meaning in rows)
@@ -1075,6 +1111,8 @@ CHOICES = {
     "layout": "Layouts:\n" + "\n".join(f"  {name:<9} {text}" for name, text in LAYOUTS.items()),
     "lang": "Languages: sv (Swedish), de (German), en (English)",
     "year": "The year: four digits, like 2028. Without one you get next year's diary.",
+    "back": "Back side: back=+1.0 moves the back of each sheet 1.0 mm down, for a printer that "
+            "prints the back higher than the front; back=-0.5 moves it up, back=0 not at all.",
 }
 CHOICES["language"] = CHOICES["lang"]
 
@@ -1124,6 +1162,12 @@ def parse_words(words, settings):
             command = name
         elif word in SETTING_WORDS:
             setattr(new, *SETTING_WORDS[word])
+        elif BACK_WORD.fullmatch(word):
+            offset = float(BACK_WORD.fullmatch(word).group(1).replace(",", "."))
+            if abs(offset) > MAX_BACK_OFFSET:
+                raise WordError(f"'{given}' moves the back side more than {MAX_BACK_OFFSET:g} mm; "
+                                "a printer is usually off by a millimetre or two.")
+            new.back_offset = offset
         elif word in CHOICES:
             named.append(word)
         else:
@@ -1147,6 +1191,7 @@ Layout       {", ".join(LAYOUTS)}  (layout on its own says what they are)
 Language     {", ".join(LANGUAGES)}
 Colour       color, bw
 Save paper   save-paper, no-save-paper  (pocket: 4 pages per A4 sheet, personal and a6: 2)
+Back side    back=+1.0 moves the back of each sheet 1 mm down, back=-0.5 up (now {signed_mm(usual.back_offset)})
 Holidays     holidays, no-holidays  (the built-in Swedish calendar)
 Output       tex-only, pdf, no-open, open
 
@@ -1212,13 +1257,14 @@ def make_diary(settings, folder, list_only=False):
 
     per_sheet = f", {sheet.per_side} pages per A4 sheet" if sheet else ""
     colour = "colour" if s.color == "color" else "black and white"
-    print(f"Making the {s.year} diary: {s.paper}, {s.layout}, {LANGUAGE_NAMES[s.language]}, {colour}{per_sheet}.")
+    back = f", back side {signed_mm(s.back_offset)} mm" if s.back_offset else ""
+    print(f"Making the {s.year} diary: {s.paper}, {s.layout}, {LANGUAGE_NAMES[s.language]}, {colour}{per_sheet}{back}.")
     print(using)
     build = folder / BUILD_DIR
     build.mkdir(exist_ok=True)
     name = f"diary-{s.paper}-{s.year}-{s.language}"
     tex = build / (f"{name}-pages.tex" if sheet else f"{name}.tex")
-    tex.write_text(diary.latex(trimmed=bool(sheet)), encoding="utf-8")
+    tex.write_text(diary.latex(trimmed=bool(sheet), back_offset=s.back_offset), encoding="utf-8")
     if s.tex_only:
         print(f"Wrote {tex.relative_to(folder)} (tex-only, so it isn't typeset).")
         return 0
@@ -1230,7 +1276,7 @@ def make_diary(settings, folder, list_only=False):
             return 1
         sheets_tex = build / f"{name}-{sheet.per_side}up.tex"
         sheets_tex.write_text(sheets_latex(sheet, page_count, tex.with_suffix(".pdf").name,
-                                           f"Alfie {s.year}, {s.paper}"), encoding="utf-8")
+                                           f"Alfie {s.year}, {s.paper}", s.back_offset), encoding="utf-8")
         tex = sheets_tex
     pdf = typeset(tex, folder)
     if pdf is None:
@@ -1270,7 +1316,7 @@ def setup_completion():
         return
 
     def complete(text, state):
-        matches = [word for word in ALL_WORDS if word.startswith(text.lower())]
+        matches = [word for word in ALL_WORDS + ["back="] if word.startswith(text.lower())]
         return matches[state] if state < len(matches) else None
 
     readline.set_completer(complete)
@@ -1312,6 +1358,8 @@ def shell_help(settings):
         f"  Language    {choices(LANGUAGES, s.language)}",
         f"  Colour      {choices(['color', 'bw'], s.color)}",
         f"  Save paper  {choices(['save-paper', 'no-save-paper'], 'save-paper' if s.save_paper else 'no-save-paper')}",
+        f"  Back side   back=+1.0, back=0, back=-0.5 and so on: mm, + moves the back of each sheet down "
+        f"(now {signed_mm(s.back_offset)})",
         f"  Holidays    {choices(['holidays', 'no-holidays'], 'holidays' if s.calendar == 'se' else 'no-holidays')}",
         f"  Output      {choices(['pdf', 'tex-only'], 'tex-only' if s.tex_only else 'pdf')}",
         f"  Open PDF    {choices(['open', 'no-open'], 'open' if s.open_pdf else 'no-open')}",

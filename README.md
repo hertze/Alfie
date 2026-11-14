@@ -41,6 +41,7 @@ Alfie takes plain words, in any order:
 | `sv`, `de`, `en` | language |
 | `color`, `bw` | red days and notes in red, or all black |
 | `save-paper`, `no-save-paper` | several pages on each A4 sheet, see [Saving paper](#saving-paper) |
+| `back=+1.0`, `back=0`, `back=-0.5` | moves the back of each sheet, in mm, see [Printer adjustment](#printer-adjustment) |
 | `holidays`, `no-holidays` | the built-in Swedish calendar, on for Swedish diaries |
 | `tex-only`, `pdf` | only write the LaTeX file, or typeset it as usual |
 | `no-open`, `open` | whether to open the PDF afterwards |
@@ -153,6 +154,14 @@ The file is called `diary-pocket-2027-sv-4up.pdf` (or `-2up`). To print and cut 
 3. Put pile A on top of pile B (on top of C and D for pocket). The leaves are then in order. The pile letters and the instructions are printed in the margin that gets cut off.
 
 Each page's back is printed right behind it, the right way up. To check your printer's setting before printing everything, print the first sheet only, cut out the title page and turn it over: the first week should be on the back, the right way up.
+
+## Printer adjustment
+
+Many printers don't print the back of a sheet exactly behind the front. If yours prints the back higher, Alfie can move everything on the back of each sheet down to make up for it, both with one page per sheet and when saving paper. The fronts, with the crop marks you cut along, stay where they are.
+
+The usual setting is `back=+1.0`: the back moves 1.0 mm down. Use `back=-0.5` to move it 0.5 mm up instead, or `back=0` to leave it. Decimals can be written with a comma too (`back=+0,9`). To change the usual value, set `back_offset` in `DEFAULTS` at the top of `alfie.py`.
+
+To find the right value, print a sheet two-sided, hold it against a window and see how far the back's lines are from the front's.
 
 ## Output
 

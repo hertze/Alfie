@@ -229,7 +229,8 @@ class ShellTest(unittest.TestCase):
 
 
 class SettingsTableTest(unittest.TestCase):
-    usual = dict(year=2035, paper="personal", layout="w2pwf", language="sv", color="bw", save_paper=False)
+    usual = dict(year=2035, paper="personal", layout="w2pwf", language="sv", color="bw", save_paper=False,
+                 back_offset=1.0)
 
     def test_the_whole_table(self):
         table = alfie.settings_table(alfie.Settings(**self.usual))
@@ -240,6 +241,7 @@ class SettingsTableTest(unittest.TestCase):
             "  Language   sv        Swedish",
             "  Colour     bw        black and white",
             "  Save paper off       one page per A4 sheet",
+            "  Back side  +1.0 mm   the back of each sheet moved 1 mm down",
             "  Holidays   on        the Swedish calendar",
         ])
         with_output = alfie.settings_table(alfie.Settings(**self.usual, tex_only=True))
@@ -254,6 +256,37 @@ class SettingsTableTest(unittest.TestCase):
             "  Save paper on        but only one a5 page fits on an A4 sheet",
             "  Holidays   off       only Sundays are red",
         ])
+
+
+class BackSideTest(unittest.TestCase):
+    def test_words(self):
+        for word, value in [("back=+0.9", 0.9), ("back=0", 0.0), ("back-0.5", -0.5), ("back+1,2", 1.2),
+                            ("--back=1", 1.0)]:
+            self.assertEqual(alfie.parse_words([word], alfie.Settings())[1].back_offset, value, word)
+        with self.assertRaises(alfie.WordError):
+            alfie.parse_words(["back=25"], alfie.Settings())
+        self.assertEqual(alfie.parse_words(["back"], alfie.Settings())[2], ["back"])
+
+    def test_how_offsets_are_written(self):
+        self.assertEqual([alfie.signed_mm(value) for value in (1.0, 0.9, -0.5, 0.95, 0)],
+                         ["+1.0", "+0.9", "-0.5", "+0.95", "0"])
+
+    def test_paper_saving_moves_only_the_backs_down(self):
+        layout = alfie.sheet_layout("pocket")
+        plain, moved = alfie.sheet_plan(layout, 107), alfie.sheet_plan(layout, 107, back_offset=0.9)
+        for number, (before, after) in enumerate(zip(plain, moved)):
+            shift = 0.9 if number % 2 else 0.0  # every second side is a back
+            for p, q in zip(before, after):
+                self.assertEqual((q.box[0], q.box[2]), (p.box[0], p.box[2]))
+                self.assertAlmostEqual(p.box[1] - q.box[1], shift)
+                self.assertAlmostEqual(p.box[3] - q.box[3], shift)
+
+    def test_one_page_per_sheet_moves_the_backs_only_when_asked(self):
+        diary = alfie.Diary(2027, "personal", "bw", "w2pwf", "sv", alfie.Notes({}, {}, []))
+        self.assertNotIn("AlfieSide", diary.latex())
+        self.assertIn("\\AlfieFrontVoffset+0.90mm", diary.latex(back_offset=0.9))
+        self.assertIn("\\AlfieFrontVoffset+-0.50mm", diary.latex(back_offset=-0.5))
+        self.assertNotIn("AlfieSide", diary.latex(trimmed=True, back_offset=0.9))  # the sheets move them
 
 
 class InstallTest(unittest.TestCase):
