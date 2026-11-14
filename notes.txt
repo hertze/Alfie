@@ -1,0 +1,25 @@
+# Dates that come back every year: birthdays, anniversaries and so on.
+#
+# One per line:   <day> <month>: <text>
+# Start a line with * to make the day red. Lines starting with # are skipped.
+#
+# Holidays, Easter, Midsummer, Mors/Fars dag, summer and winter time and so on
+# are built in (see swedish_calendar() in alfie.py). Dates for one year only
+# go in notes-YEAR.txt, for example notes-2027.txt.
+# Check the result with: ./alfie.py 2027 --list
+
+21 januari: Annas födelsedag
+10 mars: Tillys födelsedag
+25 mars: Daniels födelsedag
+23 april: Mors födelsedag
+11 maj: Berits födelsedag
+15 juni: Alice födelsedag
+23 juni: Lennox födelsedag
+20 juli: Alfies födelsedag
+4 augusti: Anna Forsängs födelsedag
+25 augusti: Bröllopsdag
+5 september: Fars födelsedag
+7 november: Leonels födelsedag
+17 november: Lennox dopdag
+10 december: Min födelsedag
+13 december: Carolines födelsedag

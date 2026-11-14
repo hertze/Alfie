@@ -1,64 +1,98 @@
 # Alfie -- a diary generator
 
-This is Alfie, a python script capable of generating diary inserts in pocket, personal or A5 size of any year you want. The script in itself makes a LaTeX file ready for typesetting and can try to typeset it for you if you have XeLateX installed on your system.
+This is Alfie, a Python script that makes diary inserts for ring binders (pocket, personal, A6 and A5) for any year, in Swedish, English or German. It writes a LaTeX file and typesets it with XeLaTeX.
 
-Right now, Alfie can make diaries in Swedish, English and German. It can render holidays and date-specific notes, as listed in used-provided text files.
+Alfie works out the Swedish holidays and other named days for every year by itself, so all you keep up to date is a short list of your own dates.
 
-## Manual
+## Quick start
 
-### Running the script
+From the terminal, in the Alfie folder:
 
-From the terminal (on a Mac), run the script with `python3 alfie.py`.
+    ./alfie.py 2027
 
-The script will ask you a series of questions:
+makes `diary-personal-2027-sv.pdf` with your default settings and opens it. If you leave out the year, you get next year's diary.
 
-1. The format you want (pocket / personal / a6 / a5)
+Run `./alfie.py` with no arguments at all to be asked step by step instead. At the end it shows the command that makes the same diary without the questions.
 
-2. If you want your diary in color or black and white (color / bw)
+## Options
 
-3. The layout you want (w1p = 1 week per page / w1pnotes = week on one page with notes / w2p = week on two pages / w2pwf = week on two pages with emphasis on weekdays / 1dp = day per page / wg = extra everything)
+| Option | What it does | Default |
+| --- | --- | --- |
+| *year* | four digits | next year |
+| `--paper` | `pocket`, `personal`, `a6` or `a5` | `personal` |
+| `--layout` | see below | `w2pwf` |
+| `--lang` | `sv`, `de` or `en` | `sv` |
+| `--color` / `--bw` | red days and notes in red, or all black | `--bw` |
+| `--holidays` | `se` (the built-in Swedish calendar) or `none` | `se` for Swedish, otherwise `none` |
+| `--list` | shows the year's red days and notes instead of making the diary | |
+| `--tex-only` | writes the LaTeX file but doesn't typeset it | |
+| `--no-open` | doesn't open the PDF afterwards | |
 
-4. The language you want (sv / de / en)
+The defaults, and the name on the title page, are at the top of `alfie.py`. `./alfie.py --help` lists all of this too.
 
-5. The year you want
+Layouts:
 
-6. Whether it should try to typeset the resulting LaTeX file (yes / no)
+- `w1p`: a week on one page
+- `w1pnotes`: a week on one page, with a notes page after it
+- `w2p`: a week on two pages
+- `w2pwf`: a week on two pages, with more room for the weekdays
+- `1dp`: a day per page
+- `wg`: a week on four pages, with week dots, week notes and a gratitude page
 
-Answers to those questions can be passed as an argument and thus bypass the text interface. You need to use the following syntax:
-    
-> `python3 alfie.py <format>-<color>-<layout>-<language>-<year>-<typeset>`
+Examples:
 
-For example:
+    ./alfie.py 2027 --paper pocket
+    ./alfie.py 2027 --layout wg --color
+    ./alfie.py 2027 --list
 
-> `python3 alfie.py personal-color-w2p-sv-2014-yes`
+## Red days and notes
 
-will make a Swedish LaTeX diary for 2014 in personal size and then typeset it.
+Sundays are always red. The built-in Swedish calendar adds, for any year:
 
-### Holidays, notes and week notes
+- **Red days:** Nyårsdagen, Trettondedag jul, Långfredagen, Påskdagen, Annandag påsk, Första maj, Kristi himmelsfärd, Pingstdagen, Nationaldagen, Midsommardagen, Alla helgons dag, Juldagen and Annandag jul.
+- **Named days:** Alla hjärtans dag, Skärtorsdagen, Påskafton, Annandag pingst, Mors dag, Midsommarafton, Halloween, Fars dag, Lucia, Julafton, Nyårsafton, and the days summer and winter time start.
 
-At runtime, Alfie will look for two text files, **notes-year.txt** (i.e. notes-2025.txt for the year of 2025) and **holidays-year.txt** (i.e. holidays-2025.txt for the year 2025). The first file has a list of dates that should be considered holidays and get a black (or red) circle around the day. For example:
+To change that list, edit `swedish_calendar()` in `alfie.py`.
 
-    1 januari
-    6 januari
-    15 april
-    17 april
-    18 april
-    1 maj
+Your own dates go in plain text files in the folder you run Alfie from:
 
-The second file adds text information for specific days, like this:
+- `notes.txt`: dates that come back every year, like birthdays. You write it once.
+- `notes-2027.txt`: dates for 2027 only. Optional.
 
-    1 januari: Nyårsdagen
-    6 januari: Trettondedag jul
-    14 februari: Alla hjärtans dag
-    30 mars: Sommartid börjar
-    17 april: Skärtorsdagen
-    18 april: Långfredagen
-    20 april: Påskdagen
+One date per line: day, month, a colon and the text. Start a line with `*` to make the day red. Lines starting with `#` are skipped.
 
-There is a third file, **weeknotes-year.txt**, that holds additional text content for the layout **wg**, such as inspirational quotes. Here's an example, where the preceding number equals the week number where the text should be added:
+    # notes.txt
+    21 januari: Annas födelsedag
+    25 augusti: Bröllopsdag
+
+    # notes-2027.txt
+    * 31 december: Nyårsafton
+    14 april: Tandläkare 08.30
+
+- Month names can be Swedish, English or German, written out or shortened to three letters (`21 jan`).
+- A day can have any number of notes. They're joined with commas: red days first, then your notes, then the other built-in days.
+- A `29 februari` in `notes.txt` shows on 28 februari in years that don't have one.
+- If a line can't be read (`31 april`, a misspelt month, a missing colon), Alfie stops and lists every such line with its file and line number.
+
+Check what you'll get before you print:
+
+    ./alfie.py 2027 --list
+
+### Week notes
+
+The `wg` layout can print a text, such as a quote, on each week's gratitude page. Put them in `weeknotes.txt` (every year) or `weeknotes-2027.txt` (2027 only), one per line, starting with the week number:
 
     1: Two roads diverged in a wood, and I--I took the one less traveled by, And that has made all the difference. --- Robert Frost
-
-    2: In this very moment, will you accept the sad and the sweet, hold lightly stories about what’s possible, and be the author of a life that has meaning and purpose for you, turning in kindness back to that life when you find yourself moving away from it? --- Kelly G. Wilson
-
     3: Your mind is for having ideas, not holding them. --- David Allen
+
+## Output
+
+The PDF ends up in the folder you run Alfie from. The LaTeX file and XeLaTeX's working files go in `build/`. Git ignores both.
+
+If XeLaTeX fails, Alfie shows the error and where to find the full log, and doesn't open an old PDF.
+
+## Requirements
+
+- Python 3.9 or later
+- XeLaTeX, for example from [MacTeX](https://tug.org/mactex/)
+- The Cronos Pro font family

@@ -1,0 +1,13 @@
+# Made by alfie.py
+diary-*.pdf
+diary-*.tex
+build/
+
+# LaTeX working files (alfie.py now writes these to build/)
+*.aux
+*.log
+*.out
+
+# Python and macOS
+__pycache__/
+.DS_Store
