@@ -874,9 +874,9 @@ def sheets_latex(layout, page_count, pages_pdf, title):
 
 def printing_instructions(layout, page_count):
     piles = PILES[:layout.per_side]
-    return (f"{sheet_count(layout, page_count)} sheets, {layout.per_side} pages on each side. Print them "
-            "two-sided, flipping on the long edge\n(the usual setting), at 100 % size. Cut the whole pile "
-            f"along the crop marks, then stack the piles\n{', '.join(piles)} with A on top.")
+    return (f"{sheet_count(layout, page_count)} sheets, {layout.per_side} pages on each side.\n"
+            "Print them two-sided, flipping on the long edge (the usual setting), at 100 % size.\n"
+            f"Cut the whole pile along the crop marks, then stack the piles {', '.join(piles)} with A on top.")
 
 # ---------------------------------------------------------------------------
 # Typesetting
@@ -1013,8 +1013,47 @@ class Settings:
         return words
 
 
-COMMANDS = ["make", "list", "init", "install", "help", "quit"]
-COMMAND_ALIASES = {"h": "help", "?": "help", "exit": "quit", "q": "quit"}
+LANGUAGE_NAMES = {"sv": "Swedish", "de": "German", "en": "English"}
+
+
+def setting_rows(s):
+    """[(label, value, what it means)] for every setting."""
+    size = PAPERS[s.paper]
+    sheet = sheet_layout(s.paper)
+    if not s.save_paper:
+        saving = "one page per A4 sheet"
+    elif sheet:
+        saving = f"{sheet.per_side} pages on each A4 sheet"
+    else:
+        saving = f"but only one {s.paper} page fits on an A4 sheet"
+    year = {next_year(): "next year", date.today().year: "this year"}.get(s.year, "")
+    return [
+        ("Year", str(s.year), year),
+        ("Paper", s.paper, f"{size['width']} × {size['height']} mm"),
+        ("Layout", s.layout, LAYOUTS[s.layout]),
+        ("Language", s.language, LANGUAGE_NAMES[s.language]),
+        ("Colour", s.color, "red days and notes in red" if s.color == "color" else "black and white"),
+        ("Save paper", "on" if s.save_paper else "off", saving),
+        ("Holidays", "on" if s.calendar == "se" else "off",
+         "the Swedish calendar" if s.calendar == "se" else "only Sundays are red"),
+        ("Output", "tex-only" if s.tex_only else "pdf", "only the LaTeX file" if s.tex_only else "a typeset PDF"),
+        ("Open PDF", "yes" if s.open_pdf else "no", "when it's done" if s.open_pdf else "leave it closed"),
+    ]
+
+
+def settings_table(settings, before=None):
+    """The settings, one per line, with what each one means. With before, only the lines that
+    changed. Output and Open PDF are left out while they're the usual pdf and yes."""
+    rows = setting_rows(settings)
+    if before is None:
+        rows = rows[:7] + [row for row in rows[7:] if row[1] not in ("pdf", "yes")]
+    else:
+        rows = [row for row, old in zip(rows, setting_rows(before)) if row != old]
+    return "\n".join(f"  {label:<11}{value:<10}{meaning}".rstrip() for label, value, meaning in rows)
+
+
+COMMANDS = ["make", "list", "settings", "init", "install", "help", "quit"]
+COMMAND_ALIASES = {"h": "help", "?": "help", "exit": "quit", "q": "quit", "show": "settings"}
 
 SETTING_WORDS = {
     **{paper: ("paper", paper) for paper in PAPERS},
@@ -1101,7 +1140,7 @@ def help_text():
   {me} list 2027                the red days and notes it will show
   {me}                          a shell, where you type the same words
 
-Commands     make (the default), list, init, install, help, quit
+Commands     make (the default), list, settings, init, install, help
 Year         four digits; without one, next year ({usual.year})
 Paper        {", ".join(PAPERS)}  (paper on its own shows the sizes)
 Layout       {", ".join(LAYOUTS)}  (layout on its own says what they are)
@@ -1155,11 +1194,12 @@ def make_diary(settings, folder, list_only=False):
               file=sys.stderr)
         return 1
 
-    print("Built-in calendar: " + ("Swedish" if s.calendar == "se" else "none (only Sundays are red)"))
-    print("Your files: " + (", ".join(notes.files) if notes.files else
-                            f"none (no {' or '.join(DATES_FILES)}; {command_name()} init makes one to fill in)"))
+    calendar_text = "the Swedish calendar" if s.calendar == "se" else "no built-in calendar (only Sundays are red)"
+    files_text = ", ".join(notes.files) if notes.files else f"no dates file yet ({command_name()} init makes one)"
+    using = f"Using {calendar_text} and {files_text}."
     diary = Diary(s.year, s.paper, s.color, s.layout, s.language, notes)
     if list_only:
+        print(using)
         diary.print_list()
         return 0
 
@@ -1170,15 +1210,17 @@ def make_diary(settings, folder, list_only=False):
         print("Saving paper needs the typeset pages, so tex-only gives the usual one page per sheet.")
         sheet = None
 
-    per_sheet = f", {sheet.per_side} pages per A4 side" if sheet else ""
-    print(f"Making the {s.year} diary: {s.paper}, {s.layout}, {s.language}, {s.color}{per_sheet}")
+    per_sheet = f", {sheet.per_side} pages per A4 sheet" if sheet else ""
+    colour = "colour" if s.color == "color" else "black and white"
+    print(f"Making the {s.year} diary: {s.paper}, {s.layout}, {LANGUAGE_NAMES[s.language]}, {colour}{per_sheet}.")
+    print(using)
     build = folder / BUILD_DIR
     build.mkdir(exist_ok=True)
     name = f"diary-{s.paper}-{s.year}-{s.language}"
     tex = build / (f"{name}-pages.tex" if sheet else f"{name}.tex")
     tex.write_text(diary.latex(trimmed=bool(sheet)), encoding="utf-8")
-    print(f"Wrote {tex.relative_to(folder)}")
     if s.tex_only:
+        print(f"Wrote {tex.relative_to(folder)} (tex-only, so it isn't typeset).")
         return 0
 
     print("Typesetting with XeLaTeX ...")
@@ -1205,6 +1247,9 @@ def make_diary(settings, folder, list_only=False):
 def run_command(command, settings, folder):
     if command == "help":
         print(help_text())
+        return 0
+    if command == "settings":
+        print(settings_table(settings))
         return 0
     if command == "install":
         return install()
@@ -1236,38 +1281,83 @@ def setup_completion():
         readline.parse_and_bind("tab: complete")
 
 
+SHELL_INTRO = """
+Change a setting by typing its new value, like 2028, pocket, wg, color or save-paper.
+Then type make to make the diary, or list to see its red days and notes.
+help shows all the words, and quit leaves."""
+
+
+def shell_help(settings):
+    """Every word, for the shell: the commands, and each setting's choices with the current
+    one marked."""
+    s = settings
+
+    def choices(values, current):
+        return "  ".join(f"{value}*" if value == current else value for value in values)
+
+    return "\n".join([
+        "Commands",
+        "  make        make the diary",
+        "  list        show the red days and notes",
+        "  settings    show all the settings",
+        "  init        write a starter dates file, if you don't have one",
+        "  install     make the alfie command work in any terminal folder",
+        "  help        this list",
+        "  quit        leave (Ctrl-D works too)",
+        "",
+        "Settings: type a new value to change one. * marks the current value.",
+        f"  Year        four digits, like {next_year()}",
+        f"  Paper       {choices(PAPERS, s.paper)}",
+        f"  Layout      {choices(LAYOUTS, s.layout)}    (layout on its own says what they are)",
+        f"  Language    {choices(LANGUAGES, s.language)}",
+        f"  Colour      {choices(['color', 'bw'], s.color)}",
+        f"  Save paper  {choices(['save-paper', 'no-save-paper'], 'save-paper' if s.save_paper else 'no-save-paper')}",
+        f"  Holidays    {choices(['holidays', 'no-holidays'], 'holidays' if s.calendar == 'se' else 'no-holidays')}",
+        f"  Output      {choices(['pdf', 'tex-only'], 'tex-only' if s.tex_only else 'pdf')}",
+        f"  Open PDF    {choices(['open', 'no-open'], 'open' if s.open_pdf else 'no-open')}",
+        "",
+        "Several words at once work too, like: 2028 pocket save-paper make",
+    ])
+
+
 def shell(folder, settings=None):
     """Read lines of words until quit. Settings stay from one line to the next."""
     settings = settings or Settings()
     if sys.stdin.isatty():
         setup_completion()
-    print(f"Alfie {VERSION}. Type words to change the settings, make to make the diary, "
-          "help for all the words, quit to leave.")
-    print(settings.describe())
+    print(f"Alfie {VERSION} makes diary inserts. The settings are:\n")
+    print(settings_table(settings))
+    print(SHELL_INTRO)
     told_shortcut = False
     while True:
         try:
-            line = input("alfie> ")
+            line = input("\nalfie> ")
         except EOFError:
             print()
             return 0
         except KeyboardInterrupt:
-            print()
+            print("\n(Type quit to leave.)")
             continue
+        words = line.split()
+        if words and (words[0].lower() == "alfie" or words[0].endswith("alfie.py")):
+            words = words[1:]  # typed out of habit from the terminal
         try:
-            command, new, named = parse_words(line.split(), settings)
+            command, new, named = parse_words(words, settings)
         except WordError as error:
             print(error)
             continue
         if command == "quit":
             return 0
-        changed, settings = new != settings, new
-        if changed:
-            print(settings.describe())
+        if new != settings:
+            print(settings_table(new, before=settings))
         elif not command:
             for name in named:
                 print(CHOICES[name])
+        settings = new
         if not command:
+            continue
+        if command == "help":
+            print(shell_help(settings))
             continue
         try:
             status = run_command(command, settings, folder)

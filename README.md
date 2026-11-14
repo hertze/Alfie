@@ -34,7 +34,7 @@ Alfie takes plain words, in any order:
 
 | Words | What they do |
 | --- | --- |
-| `make`, `list`, `init`, `install`, `help` | what to do; `make` if you don't say |
+| `make`, `list`, `settings`, `init`, `install`, `help` | what to do; `make` if you don't say |
 | a year, like `2027` | the year; next year if you leave it out |
 | `pocket`, `personal`, `a6`, `a5` | paper size |
 | `w1p`, `w1pnotes`, `w2p`, `w2pwf`, `1dp`, `wg` | layout, see below |
@@ -58,19 +58,27 @@ Layouts:
 
 ### The shell
 
-Type `alfie` on its own to get a shell. It shows the current settings, and you type the same words to change them or to run a command. Tab completes the words, and the settings stay until you leave:
+Type `alfie` on its own to get a shell. It starts by showing the settings and what they mean:
 
-    $ alfie
-    Alfie 3.1. Type words to change the settings, make to make the diary, help for all the words, quit to leave.
-    2028 · personal · w2pwf · sv · bw
+    Alfie 3.1 makes diary inserts. The settings are:
+
+      Year       2027      next year
+      Paper      personal  97 × 173 mm
+      Layout     w2pwf     a week on two pages, with more room for the weekdays
+      Language   sv        Swedish
+      Colour     bw        black and white
+      Save paper off       one page per A4 sheet
+      Holidays   on        the Swedish calendar
+
+Type a new value to change a setting, and Alfie shows what changed:
+
     alfie> pocket save-paper
-    2028 · pocket · w2pwf · sv · bw · 4 pages per sheet
-    alfie> list
-    ...
-    alfie> make
-    alfie> quit
+      Paper      pocket    83 × 122 mm
+      Save paper on        4 pages on each A4 sheet
 
-So you can list the dates, fix your dates file, list again and make the diary without starting over.
+Then `list` shows the red days and notes, and `make` makes the diary. `settings` shows all the settings again, `help` lists every word with the current choices marked, and `quit` (or Ctrl-D) leaves. Tab completes the words.
+
+The settings stay until you leave, so you can list the dates, fix your dates file, list again and make the diary without starting over.
 
 Alfie keeps its files in its own folder, next to `alfie.py`, whichever folder you run it from: your dates file, and the PDFs it makes.
 

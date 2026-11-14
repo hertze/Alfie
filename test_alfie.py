@@ -205,17 +205,55 @@ class ShellTest(unittest.TestCase):
         return status, output.getvalue()
 
     def test_settings_stay_between_lines(self):
-        status, output = self.run_shell(["pocket 2028", "save-paper", "layout", "pockt", "list", "quit"])
+        status, output = self.run_shell(["personal", "pocket 2035", "save-paper", "layout", "pockt", "list", "quit"])
         self.assertEqual(status, 0)
-        self.assertIn("2028 · pocket · w2pwf · sv · bw\n", output)
-        self.assertIn("2028 · pocket · w2pwf · sv · bw · 4 pages per sheet\n", output)
+        self.assertIn("  Year       2035\n  Paper      pocket    83 × 122 mm\n", output)  # only what changed
+        self.assertIn("  Save paper on        4 pages on each A4 sheet\n", output)
         self.assertIn("Layouts:", output)
         self.assertIn("Did you mean pocket?", output)
-        self.assertIn("Red days (●) and notes for 2028.", output)
-        self.assertIn("Your files: dates.md (1 every year, 0 for 2028 only)", output)
+        self.assertIn("Using the Swedish calendar and dates.md (1 every year, 0 for 2035 only).", output)
+        self.assertIn("Red days (●) and notes for 2035.", output)
+
+    def test_help_in_the_shell_marks_the_current_values(self):
+        output = self.run_shell(["pocket save-paper", "help", "quit"])[1]
+        self.assertIn("  Paper       pocket*  personal  a6  a5\n", output)
+        self.assertIn("  Save paper  save-paper*  no-save-paper\n", output)
+        self.assertIn("  settings    show all the settings\n", output)
+
+    def test_a_leading_alfie_is_fine(self):
+        output = self.run_shell(["alfie a6", "quit"])[1]
+        self.assertIn("  Paper      a6        107 × 150 mm\n", output)
 
     def test_end_of_input_leaves_the_shell(self):
         self.assertEqual(self.run_shell([EOFError()])[0], 0)
+
+
+class SettingsTableTest(unittest.TestCase):
+    usual = dict(year=2035, paper="personal", layout="w2pwf", language="sv", color="bw", save_paper=False)
+
+    def test_the_whole_table(self):
+        table = alfie.settings_table(alfie.Settings(**self.usual))
+        self.assertEqual(table.splitlines(), [
+            "  Year       2035",
+            "  Paper      personal  97 × 173 mm",
+            "  Layout     w2pwf     a week on two pages, with more room for the weekdays",
+            "  Language   sv        Swedish",
+            "  Colour     bw        black and white",
+            "  Save paper off       one page per A4 sheet",
+            "  Holidays   on        the Swedish calendar",
+        ])
+        with_output = alfie.settings_table(alfie.Settings(**self.usual, tex_only=True))
+        self.assertIn("  Output     tex-only  only the LaTeX file", with_output)
+
+    def test_only_the_lines_that_changed(self):
+        before = alfie.Settings(**self.usual)
+        after = alfie.Settings(**{**self.usual, "paper": "a5", "language": "en", "save_paper": True})
+        self.assertEqual(alfie.settings_table(after, before).splitlines(), [
+            "  Paper      a5        150 × 212 mm",
+            "  Language   en        English",
+            "  Save paper on        but only one a5 page fits on an A4 sheet",
+            "  Holidays   off       only Sundays are red",
+        ])
 
 
 class InstallTest(unittest.TestCase):
