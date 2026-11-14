@@ -8,7 +8,7 @@
 # Dates at the top come back every year. Dates under a heading with a year,
 # like "## 2027" below, are for that year only.
 #
-# Check what you'll get with:  ./alfie.py 2027 --list
+# Check what you'll get with:  alfie list 2027
 
 21 januari: Annas födelsedag
 10 mars: Tillys födelsedag

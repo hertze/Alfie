@@ -2,27 +2,30 @@
 # -*- coding: utf-8 -*-
 
 # A L F I E
-# version 3.0
+# version 3.1
 #
 # by Joakim Hertze
 #
 # Makes diary inserts for ring binders as LaTeX and typesets them with XeLaTeX.
 #
-#   ./alfie.py 2027          the 2027 diary, with the defaults below
-#   ./alfie.py 2027 --list   the red days and notes it will show
-#   ./alfie.py               asks step by step
-#   ./alfie.py --help        all options
+#   alfie 2027                     the 2027 diary, with the defaults below
+#   alfie 2027 pocket save-paper   pocket size, four pages on each A4 sheet
+#   alfie list 2027                the red days and notes it will show
+#   alfie                          a shell, where you type the same words
+#   alfie help                     all the words
+#
+# Until you've run ./alfie.py install, type ./alfie.py instead of alfie.
 
 from __future__ import annotations
 
-import argparse
 import calendar
+import difflib
 import os
 import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -36,7 +39,7 @@ DEFAULTS = {
     "color": "bw",        # bw or color
     "layout": "w2pwf",    # one of LAYOUTS below
     "language": "sv",     # sv, de or en
-    "save_paper": False,  # True: 2 or 4 pages on each A4 sheet (see --save-paper)
+    "save_paper": False,  # True: 2 or 4 pages on each A4 sheet (the word save-paper)
 }
 AUTHOR = "Joakim Hertze"
 
@@ -389,7 +392,7 @@ def starter_dates(language, year):
 # Dates at the top come back every year, like birthdays. Dates under a heading
 # with a year, like the one below, are for that year only.
 #
-# Check what you'll get with:  ./alfie.py {year} --list
+# Check what you'll get with:  {command_name()} list {year}
 # Remove the # in front of an example to use it, or write your own.
 
 # 14 {months[2]}: Example: a birthday
@@ -408,7 +411,7 @@ def write_starter_dates(folder, language, year):
         return 1
     path = folder / "dates.txt"  # rename it dates.md to edit it as Markdown
     path.write_text(starter_dates(language, year), encoding="utf-8")
-    print(f"Wrote {path.name}. Add your dates, then check them with: ./alfie.py {year} --list")
+    print(f"Wrote {path.name}. Add your dates, then check them with: {command_name()} list {year}")
     return 0
 
 
@@ -697,7 +700,7 @@ class Diary:
 SHEET_WIDTH, SHEET_HEIGHT = 210.0, 297.0  # A4, portrait, mm
 SHEET_MARGIN = 10.0                       # at least this much paper around the pages
 SHEET_GUTTER = 10.0                       # paper between pages, room for crop marks
-MARK_GAP, MARK_LENGTH = 2.0, 5.0          # crop marks: gap from the page corner, and length
+CROSS_ARM = 20.0                          # crop marks: a cross on each page corner, this long each way
 PILES = "ABCDEFGH"
 
 
@@ -785,18 +788,41 @@ def mm(value):
     return f"{value:.2f}"
 
 
-def crop_marks(box):
-    """Short lines continuing the edges of a page past its corners."""
+def cross_lines(box):
+    """The crop marks for a page: a cross centred on each corner, its arms running along the
+    page's edges both outwards and inwards (like the crop package's cross marks in the one page
+    per sheet version). Each arm lies on a cutting line, so cutting removes it, and a piece of
+    the sheet keeps the marks for every edge that is still to be cut.
+    Returns line segments as ((x1, y1), (x2, y2))."""
     left, bottom, right, top = box
-    gap, length = MARK_GAP, MARK_LENGTH
-    marks = []
-    for y in (bottom, top):
-        marks.append(f"\\put({mm(left - gap - length)},{mm(y)}){{\\line(1,0){{{mm(length)}}}}}")
-        marks.append(f"\\put({mm(right + gap)},{mm(y)}){{\\line(1,0){{{mm(length)}}}}}")
+    lines = []
     for x in (left, right):
-        marks.append(f"\\put({mm(x)},{mm(bottom - gap - length)}){{\\line(0,1){{{mm(length)}}}}}")
-        marks.append(f"\\put({mm(x)},{mm(top + gap)}){{\\line(0,1){{{mm(length)}}}}}")
+        for y in (bottom, top):
+            lines.append(((x - CROSS_ARM, y), (x + CROSS_ARM, y)))
+            lines.append(((x, y - CROSS_ARM), (x, y + CROSS_ARM)))
+    return lines
+
+
+def crop_marks(box):
+    marks = []
+    for (x1, y1), (x2, y2) in cross_lines(box):
+        if y1 == y2:
+            marks.append(f"\\put({mm(x1)},{mm(y1)}){{\\line(1,0){{{mm(x2 - x1)}}}}}")
+        else:
+            marks.append(f"\\put({mm(x1)},{mm(y1)}){{\\line(0,1){{{mm(y2 - y1)}}}}}")
     return "".join(marks)
+
+
+def label_span(layout):
+    """(left, right) of the widest stretch of the top and bottom margins that no cross reaches
+    into, for the sheet number and the printing instructions."""
+    first_left = block_box(layout)[0]
+    edges = [SHEET_MARGIN, SHEET_WIDTH - SHEET_MARGIN]
+    for col in range(layout.cols):
+        left = first_left + col * (layout.width + SHEET_GUTTER)
+        edges += [left, left + layout.width]
+    edges.sort()
+    return max(zip(edges, edges[1:]), key=lambda span: span[1] - span[0])
 
 
 def sheets_latex(layout, page_count, pages_pdf, title):
@@ -806,6 +832,12 @@ def sheets_latex(layout, page_count, pages_pdf, title):
     piles = PILES[:layout.per_side]
     block = block_box(layout)
     below, above = block[1] / 2, (block[3] + SHEET_HEIGHT) / 2  # middle of the bottom and top margins
+    span_left, span_right = label_span(layout)
+    label_x, label_width = (span_left + span_right) / 2, span_right - span_left - 6
+
+    def label(y, text):
+        return (f"\\put({mm(label_x)},{mm(y)}){{\\makebox(0,0){{\\parbox{{{mm(label_width)}mm}}"
+                f"{{\\centering\\scriptsize {text}}}}}}}")
     lines = [
         "\\documentclass{article}",
         "\\usepackage[a4paper,margin=0mm]{geometry}",
@@ -817,7 +849,7 @@ def sheets_latex(layout, page_count, pages_pdf, title):
     ]
     for number, side in enumerate(sides):
         front = number % 2 == 0
-        items = ["\\setlength{\\unitlength}{1mm}\\linethickness{0.25pt}"]
+        items = ["\\setlength{\\unitlength}{1mm}\\linethickness{0.4pt}"]
         for place in side:
             left, bottom, right, top = place.box
             middle = (bottom + top) / 2
@@ -829,12 +861,11 @@ def sheets_latex(layout, page_count, pages_pdf, title):
                 x = right + 9 if on_right else left - 9
                 items.append(f"\\put({mm(x)},{mm(middle)}){{\\makebox(0,0){{\\small {piles[place.slot]}}}}}")
         if front:
-            items.append(f"\\put({mm(SHEET_WIDTH / 2)},{mm(below)}){{\\makebox(0,0){{\\scriptsize "
-                         f"{title}: sheet {number // 2 + 1} of {len(sides) // 2}}}}}")
+            items.append(label(below, f"{title}: sheet {number // 2 + 1} of {len(sides) // 2}"))
         if number == 0:
-            items.append(f"\\put({mm(SHEET_WIDTH / 2)},{mm(above)}){{\\makebox(0,0){{\\scriptsize\\shortstack{{"
-                         "Print two-sided, flipping on the long edge, at 100\\,\\% size.\\\\"
-                         f"Cut along the crop marks, then stack the piles with A on top: {', '.join(piles)}.}}}}}}")
+            items.append(label(above, "Print two-sided, flipping on the long edge, at 100\\,\\% size. "
+                                      f"Cut along the crop marks, then stack the piles with A on top: "
+                                      f"{', '.join(piles)}."))
         lines.append("\\AddToShipoutPictureBG*{\\AtPageLowerLeft{" + "".join(items) + "}}")
         lines.append("\\null\\newpage")
     lines.append("\\end{document}")
@@ -875,7 +906,7 @@ def run_xelatex(tex):
     what went wrong."""
     xelatex = shutil.which("xelatex") or (MACTEX_XELATEX if os.path.exists(MACTEX_XELATEX) else None)
     if not xelatex:
-        print("I can't find XeLaTeX. Install MacTeX, or use --tex-only to just write the LaTeX file.",
+        print("I can't find XeLaTeX. Install MacTeX, or add the word tex-only to just write the LaTeX file.",
               file=sys.stderr)
         return None
     built, log = tex.with_suffix(".pdf"), tex.with_suffix(".log")
@@ -921,160 +952,233 @@ def remove_build_files(build, name, keep):
             pass  # other files are still in there
 
 # ---------------------------------------------------------------------------
-# Command line and questions
+# Words: what you type, after alfie or in Alfie's shell
 # ---------------------------------------------------------------------------
+
+VERSION = "3.1"
+FOLDER = Path(__file__).resolve().parent  # Alfie's files live next to alfie.py, wherever you run it from
+
+# Where "alfie install" puts the alfie command: the first of these that is on PATH and writable.
+INSTALL_DIRS = [Path.home() / ".local" / "bin", Path.home() / "bin", Path("/opt/homebrew/bin"), Path("/usr/local/bin")]
 
 
 def next_year():
     return date.today().year + 1
 
 
-def year_argument(text):
-    if re.fullmatch(r"\d{4}", text) and 1583 <= int(text) <= 9998:
-        return int(text)
-    if "-" in text:
-        raise argparse.ArgumentTypeError(
-            f"'{text}' is the old way of giving options. Now it's e.g. "
-            "./alfie.py 2027 --paper pocket --layout wg (see --help)")
-    raise argparse.ArgumentTypeError(f"'{text}' isn't a year (four digits, like {next_year()})")
+@dataclass
+class Settings:
+    year: int = field(default_factory=next_year)
+    paper: str = DEFAULTS["paper"]
+    layout: str = DEFAULTS["layout"]
+    language: str = DEFAULTS["language"]
+    color: str = DEFAULTS["color"]
+    save_paper: bool = DEFAULTS["save_paper"]
+    holidays: str = ""  # "se" or "none"; "" means the Swedish calendar for Swedish diaries
+    tex_only: bool = False
+    open_pdf: bool = True
+
+    @property
+    def calendar(self):
+        return self.holidays or ("se" if self.language == "sv" else "none")
+
+    def describe(self):
+        """The settings on one line, as the shell shows them."""
+        parts = [str(self.year), self.paper, self.layout, self.language, self.color]
+        if self.save_paper:
+            sheet = sheet_layout(self.paper)
+            parts.append(f"{sheet.per_side} pages per sheet" if sheet else f"save-paper (doesn't fit {self.paper})")
+        if self.calendar == "none":
+            parts.append("no holidays")
+        if self.tex_only:
+            parts.append("tex-only")
+        if not self.open_pdf:
+            parts.append("no-open")
+        return " · ".join(parts)
+
+    def words(self):
+        """The words that give these settings, leaving out the usual ones."""
+        usual = Settings()
+        words = [str(self.year)]
+        words += [getattr(self, name) for name in ("paper", "layout", "language", "color")
+                  if getattr(self, name) != getattr(usual, name)]
+        if self.save_paper != usual.save_paper:
+            words.append("save-paper" if self.save_paper else "no-save-paper")
+        if self.holidays:
+            words.append("holidays" if self.holidays == "se" else "no-holidays")
+        if self.tex_only:
+            words.append("tex-only")
+        if not self.open_pdf:
+            words.append("no-open")
+        return words
 
 
-def parse_arguments(argv):
-    parser = argparse.ArgumentParser(
-        prog="alfie.py",
-        description="Makes a diary insert as LaTeX and typesets it with XeLaTeX. "
-                    "Run it without arguments to be asked step by step.",
-        epilog="Layouts: " + "; ".join(f"{name} = {text}" for name, text in LAYOUTS.items())
-               + ". Red days and notes: see README.md.",
-    )
-    parser.add_argument("year", nargs="?", type=year_argument, default=next_year(),
-                        help="the year (default: next year, %(default)s)")
-    parser.add_argument("--paper", choices=PAPERS, default=DEFAULTS["paper"],
-                        help="paper size (default: %(default)s)")
-    parser.add_argument("--layout", choices=LAYOUTS, default=DEFAULTS["layout"],
-                        help="page layout, see below (default: %(default)s)")
-    parser.add_argument("--lang", dest="language", choices=LANGUAGES, default=DEFAULTS["language"],
-                        help="language (default: %(default)s)")
-    colors = parser.add_mutually_exclusive_group()
-    colors.add_argument("--color", dest="color", action="store_const", const="color",
-                        help="red days and notes in red" + (" (default)" if DEFAULTS["color"] == "color" else ""))
-    colors.add_argument("--bw", dest="color", action="store_const", const="bw",
-                        help="black and white" + (" (default)" if DEFAULTS["color"] == "bw" else ""))
-    parser.set_defaults(color=DEFAULTS["color"])
-    parser.add_argument("--save-paper", action=argparse.BooleanOptionalAction, default=DEFAULTS["save_paper"],
-                        help="put several pages on each A4 sheet, to print two-sided and cut "
-                             "(pocket: 4, personal and a6: 2; a5 doesn't fit)")
-    parser.add_argument("--holidays", choices=HOLIDAY_CALENDARS,
-                        help="built-in red days and named days (default: se for Swedish, otherwise none)")
-    parser.add_argument("--init", action="store_true",
-                        help="write a starter dates.txt to fill in, then stop")
-    parser.add_argument("--list", action="store_true",
-                        help="show the year's red days and notes instead of making the diary")
-    parser.add_argument("--tex-only", action="store_true", help="write the LaTeX file but don't typeset it")
-    parser.add_argument("--no-open", action="store_true", help="don't open the PDF afterwards")
-    return parser.parse_args(argv)
+COMMANDS = ["make", "list", "init", "install", "help", "quit"]
+COMMAND_ALIASES = {"h": "help", "?": "help", "exit": "quit", "q": "quit"}
+
+SETTING_WORDS = {
+    **{paper: ("paper", paper) for paper in PAPERS},
+    **{layout: ("layout", layout) for layout in LAYOUTS},
+    **{language: ("language", language) for language in LANGUAGES},
+    "color": ("color", "color"), "colour": ("color", "color"), "bw": ("color", "bw"),
+    "save-paper": ("save_paper", True), "no-save-paper": ("save_paper", False),
+    "holidays": ("holidays", "se"), "se": ("holidays", "se"),
+    "no-holidays": ("holidays", "none"), "none": ("holidays", "none"),
+    "tex-only": ("tex_only", True), "pdf": ("tex_only", False),
+    "no-open": ("open_pdf", False), "open": ("open_pdf", True),
+}
+
+# A setting's name on its own shows its choices. Before a value it's simply skipped, so the
+# old way of writing options ("--paper pocket --save-paper") still works.
+CHOICES = {
+    "paper": "Paper sizes: " + ", ".join(f"{name} ({size['width']} × {size['height']} mm)"
+                                        for name, size in PAPERS.items()),
+    "layout": "Layouts:\n" + "\n".join(f"  {name:<9} {text}" for name, text in LAYOUTS.items()),
+    "lang": "Languages: sv (Swedish), de (German), en (English)",
+    "year": "The year: four digits, like 2028. Without one you get next year's diary.",
+}
+CHOICES["language"] = CHOICES["lang"]
+
+ALL_WORDS = sorted(set(COMMANDS) | set(COMMAND_ALIASES) | set(SETTING_WORDS) | set(CHOICES))
 
 
-def ask(question, options, default):
-    while True:
-        answer = input(f"\n> {question} ({'/'.join(options)})? [{default}] ").strip().lower()
-        if not answer:
-            return default
-        if answer in options:
-            return answer
-        print(f"Please choose one of: {', '.join(options)}")
+class WordError(Exception):
+    pass
 
 
-def ask_year(default):
-    while True:
-        answer = input(f"\n> What year do you need (YYYY)? [{default}] ").strip()
-        if not answer:
-            return default
-        try:
-            return year_argument(answer)
-        except argparse.ArgumentTypeError as error:
-            print(error)
+def command_name():
+    """How to run Alfie from a terminal: alfie once it's installed, otherwise ./alfie.py."""
+    found = shutil.which("alfie")
+    return "alfie" if found and Path(found).resolve() == Path(__file__).resolve() else "./alfie.py"
 
 
-def shortcut(args):
-    """The command that makes the same diary without the questions."""
-    words = ["./alfie.py", str(args.year)]
-    if args.paper != DEFAULTS["paper"]:
-        words += ["--paper", args.paper]
-    if args.layout != DEFAULTS["layout"]:
-        words += ["--layout", args.layout]
-    if args.language != DEFAULTS["language"]:
-        words += ["--lang", args.language]
-    if args.color != DEFAULTS["color"]:
-        words.append(f"--{args.color}")
-    if args.save_paper != DEFAULTS["save_paper"]:
-        words.append("--save-paper" if args.save_paper else "--no-save-paper")
-    if args.tex_only:
-        words.append("--tex-only")
-    return " ".join(words)
+def unknown_word(given):
+    word = given.lower().strip("-")
+    parts = word.split("-")
+    if len(parts) > 2 and all(part in SETTING_WORDS or part in COMMANDS or part in ("yes", "no")
+                              or (part.isdigit() and len(part) == 4) for part in parts):
+        words = " ".join(part for part in parts if part not in ("yes", "no"))
+        return f"Put spaces between the words, not dashes: {command_name()} {words}"
+    close = difflib.get_close_matches(word, ALL_WORDS, n=1, cutoff=0.6)
+    hint = f"Did you mean {close[0]}?" if close else f"{command_name()} help shows them all."
+    return f"I don't know the word '{given}'. {hint}"
 
 
-def ask_questions():
-    print("\n\nA L F I E\n\nA somewhat clever diary generator for Filofax-sized binders")
-    print("\n---------------------------------------------------------\n")
-    print("\nHello,")
-    print("\nI have some questions before we begin:")
-    args = argparse.Namespace(holidays=None, init=False, list=False, no_open=False)
-    args.paper = ask("What format should I use for your insert", list(PAPERS), DEFAULTS["paper"])
-    args.color = ask("Should I use color or black & white mode", ["color", "bw"], DEFAULTS["color"])
-    args.layout = ask("What layout should I use for your insert", list(LAYOUTS), DEFAULTS["layout"])
-    sheet = sheet_layout(args.paper)
-    args.save_paper = bool(sheet) and ask(
-        f"Should I save paper by putting {sheet.per_side} pages on each A4 sheet", ["yes", "no"],
-        "yes" if DEFAULTS["save_paper"] else "no") == "yes"
-    args.language = ask("What language should I use", list(LANGUAGES), DEFAULTS["language"])
-    args.year = ask_year(next_year())
-    args.tex_only = ask("Shall I typeset it to PDF as well", ["yes", "no"], "yes") == "no"
-    print(f"\nNext time you can skip the questions: {shortcut(args)}\n")
-    return args
+def parse_words(words, settings):
+    """Apply words, in any order, to a copy of settings. Returns (the command or None, the
+    new settings, the setting names given on their own). A word Alfie doesn't know raises
+    WordError, with a suggestion, and nothing changes."""
+    new = replace(settings)
+    command, named = None, []
+    for given in words:
+        word = given.lower().lstrip("-")
+        if not word:
+            continue
+        if word.isdigit():
+            if len(word) != 4 or not 1583 <= int(word) <= 9998:
+                raise WordError(f"'{given}' isn't a year I can make: four digits, like {next_year()}.")
+            new.year = int(word)
+        elif word in COMMANDS or word in COMMAND_ALIASES:
+            name = COMMAND_ALIASES.get(word, word)
+            if command and command != name:
+                raise WordError(f"One command at a time, please: {command} or {name}.")
+            command = name
+        elif word in SETTING_WORDS:
+            setattr(new, *SETTING_WORDS[word])
+        elif word in CHOICES:
+            named.append(word)
+        else:
+            raise WordError(unknown_word(given))
+    return command, new, named
 
 
-def make_diary(args, folder):
-    if args.init:
-        return write_starter_dates(folder, args.language, args.year)
-    holidays = args.holidays or ("se" if args.language == "sv" else "none")
-    if holidays == "se" and args.year < FIRST_SWEDISH_YEAR:
+def help_text():
+    me, usual = command_name(), Settings()
+    return f"""Alfie {VERSION} makes diary inserts. Give it words, in any order:
+
+  {me} 2027                     the 2027 diary, with your usual settings
+  {me} 2027 pocket save-paper   pocket size, four pages on each A4 sheet
+  {me} list 2027                the red days and notes it will show
+  {me}                          a shell, where you type the same words
+
+Commands     make (the default), list, init, install, help, quit
+Year         four digits; without one, next year ({usual.year})
+Paper        {", ".join(PAPERS)}  (paper on its own shows the sizes)
+Layout       {", ".join(LAYOUTS)}  (layout on its own says what they are)
+Language     {", ".join(LANGUAGES)}
+Colour       color, bw
+Save paper   save-paper, no-save-paper  (pocket: 4 pages per A4 sheet, personal and a6: 2)
+Holidays     holidays, no-holidays  (the built-in Swedish calendar)
+Output       tex-only, pdf, no-open, open
+
+Your usual settings: {usual.describe()}  (DEFAULTS at the top of alfie.py)
+Your dates go in dates.md or dates.txt in {FOLDER}. More in README.md."""
+
+
+def install(candidates=None):
+    """Make the alfie command work in any terminal folder, with a link to this file in a
+    folder on PATH."""
+    me = Path(__file__).resolve()
+    on_path = {Path(entry).expanduser() for entry in os.environ.get("PATH", "").split(os.pathsep) if entry}
+    for folder in candidates or INSTALL_DIRS:
+        if folder not in on_path or not folder.is_dir() or not os.access(folder, os.W_OK):
+            continue
+        link = folder / "alfie"
+        if link.is_symlink() and link.resolve() == me:
+            print(f"The alfie command is already installed: {link} → {me}")
+            return 0
+        if link.exists() or link.is_symlink():
+            print(f"There's already something called {link}, so I've left it alone.", file=sys.stderr)
+            return 1
+        link.symlink_to(me)
+        print(f"Installed {link} → {me}\nNow alfie works in any terminal folder. To undo it: rm {link}")
+        return 0
+    print("I can't find a folder on your PATH to put the alfie command in. One way to make one:\n"
+          f"  mkdir -p ~/.local/bin && ln -s '{me}' ~/.local/bin/alfie\n"
+          "then add this line to ~/.zshrc:  export PATH=\"$HOME/.local/bin:$PATH\"", file=sys.stderr)
+    return 1
+
+
+def make_diary(settings, folder, list_only=False):
+    """Make the diary, or with list_only show its red days and notes. Returns an exit status."""
+    s = settings
+    if s.calendar == "se" and s.year < FIRST_SWEDISH_YEAR:
         print(f"The built-in Swedish calendar follows the holiday law as it has been since {FIRST_SWEDISH_YEAR}; "
-              f"{args.year} had other red days.\nAdd --holidays none and mark that year's red days with * "
+              f"{s.year} had other red days.\nAdd the word no-holidays, and mark that year's red days with * "
               "in your dates file.", file=sys.stderr)
         return 1
     warn_about_old_files(folder)
     try:
-        notes = load_notes(args.year, holidays, folder, weeknotes=args.layout == "wg")
+        notes = load_notes(s.year, s.calendar, folder, weeknotes=s.layout == "wg")
     except NotesError as error:
         print("Please fix these lines first:\n" + "\n".join(f"  {problem}" for problem in error.problems),
               file=sys.stderr)
         return 1
 
-    print("Built-in calendar: " + ("Swedish" if holidays == "se" else "none (only Sundays are red)"))
-    print("Your files: " + (", ".join(notes.files) if notes.files
-                            else f"none (no {' or '.join(DATES_FILES)}; ./alfie.py --init makes one to fill in)"))
-    diary = Diary(args.year, args.paper, args.color, args.layout, args.language, notes)
-    if args.list:
+    print("Built-in calendar: " + ("Swedish" if s.calendar == "se" else "none (only Sundays are red)"))
+    print("Your files: " + (", ".join(notes.files) if notes.files else
+                            f"none (no {' or '.join(DATES_FILES)}; {command_name()} init makes one to fill in)"))
+    diary = Diary(s.year, s.paper, s.color, s.layout, s.language, notes)
+    if list_only:
         diary.print_list()
         return 0
 
-    sheet = sheet_layout(args.paper) if args.save_paper else None
-    if args.save_paper and sheet is None:
-        print(f"Only one {args.paper} page fits on an A4 sheet, so it's one page per sheet as usual.")
-    if sheet and args.tex_only:
-        print("Saving paper needs the typeset pages, so --tex-only gives the usual one page per sheet.")
+    sheet = sheet_layout(s.paper) if s.save_paper else None
+    if s.save_paper and sheet is None:
+        print(f"Only one {s.paper} page fits on an A4 sheet, so it's one page per sheet as usual.")
+    if sheet and s.tex_only:
+        print("Saving paper needs the typeset pages, so tex-only gives the usual one page per sheet.")
         sheet = None
 
     per_sheet = f", {sheet.per_side} pages per A4 side" if sheet else ""
-    print(f"Making the {args.year} diary: {args.paper}, {args.layout}, {args.language}, {args.color}{per_sheet}")
+    print(f"Making the {s.year} diary: {s.paper}, {s.layout}, {s.language}, {s.color}{per_sheet}")
     build = folder / BUILD_DIR
     build.mkdir(exist_ok=True)
-    name = f"diary-{args.paper}-{args.year}-{args.language}"
+    name = f"diary-{s.paper}-{s.year}-{s.language}"
     tex = build / (f"{name}-pages.tex" if sheet else f"{name}.tex")
     tex.write_text(diary.latex(trimmed=bool(sheet)), encoding="utf-8")
     print(f"Wrote {tex.relative_to(folder)}")
-    if args.tex_only:
+    if s.tex_only:
         return 0
 
     print("Typesetting with XeLaTeX ...")
@@ -1084,7 +1188,7 @@ def make_diary(args, folder):
             return 1
         sheets_tex = build / f"{name}-{sheet.per_side}up.tex"
         sheets_tex.write_text(sheets_latex(sheet, page_count, tex.with_suffix(".pdf").name,
-                                           f"Alfie {args.year}, {args.paper}"), encoding="utf-8")
+                                           f"Alfie {s.year}, {s.paper}"), encoding="utf-8")
         tex = sheets_tex
     pdf = typeset(tex, folder)
     if pdf is None:
@@ -1093,24 +1197,107 @@ def make_diary(args, folder):
     print(f"Done: {pdf.name}")
     if sheet:
         print(printing_instructions(sheet, page_count))
-    if not args.no_open and sys.platform == "darwin":
+    if s.open_pdf and sys.platform == "darwin":
         subprocess.run(["open", str(pdf)], check=False)
     return 0
 
 
+def run_command(command, settings, folder):
+    if command == "help":
+        print(help_text())
+        return 0
+    if command == "install":
+        return install()
+    if command == "init":
+        return write_starter_dates(folder, settings.language, settings.year)
+    return make_diary(settings, folder, list_only=command == "list")
+
+# ---------------------------------------------------------------------------
+# The shell: alfie on its own
+# ---------------------------------------------------------------------------
+
+
+def setup_completion():
+    """Tab completes Alfie's words in the shell."""
+    try:
+        import readline
+    except ImportError:
+        return
+
+    def complete(text, state):
+        matches = [word for word in ALL_WORDS if word.startswith(text.lower())]
+        return matches[state] if state < len(matches) else None
+
+    readline.set_completer(complete)
+    readline.set_completer_delims(" \t")
+    if "libedit" in (readline.__doc__ or ""):  # the readline that comes with macOS
+        readline.parse_and_bind("bind ^I rl_complete")
+    else:
+        readline.parse_and_bind("tab: complete")
+
+
+def shell(folder, settings=None):
+    """Read lines of words until quit. Settings stay from one line to the next."""
+    settings = settings or Settings()
+    if sys.stdin.isatty():
+        setup_completion()
+    print(f"Alfie {VERSION}. Type words to change the settings, make to make the diary, "
+          "help for all the words, quit to leave.")
+    print(settings.describe())
+    told_shortcut = False
+    while True:
+        try:
+            line = input("alfie> ")
+        except EOFError:
+            print()
+            return 0
+        except KeyboardInterrupt:
+            print()
+            continue
+        try:
+            command, new, named = parse_words(line.split(), settings)
+        except WordError as error:
+            print(error)
+            continue
+        if command == "quit":
+            return 0
+        changed, settings = new != settings, new
+        if changed:
+            print(settings.describe())
+        elif not command:
+            for name in named:
+                print(CHOICES[name])
+        if not command:
+            continue
+        try:
+            status = run_command(command, settings, folder)
+        except KeyboardInterrupt:
+            print("\nStopped.")
+            continue
+        if command == "make" and status == 0 and not told_shortcut:
+            print(f"(Outside the shell, the same diary is: {command_name()} {' '.join(settings.words())})")
+            told_shortcut = True
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    interactive = not argv
     try:
-        args = ask_questions() if interactive else parse_arguments(argv)
-        status = make_diary(args, Path.cwd())
-    except (KeyboardInterrupt, EOFError):
+        if not argv:
+            return shell(FOLDER)
+        try:
+            command, settings, named = parse_words(argv, Settings())
+        except WordError as error:
+            print(error, file=sys.stderr)
+            return 2
+        if command == "quit":
+            return 0
+        if named and not command and settings == Settings():
+            print("\n".join(CHOICES[name] for name in named))
+            return 0
+        return run_command(command or "make", settings, FOLDER)
+    except KeyboardInterrupt:
         print("\nStopped.")
         return 130
-    if interactive and status == 0:
-        print("\n\nAll done!")
-        print("\n\n---------------------------------------------------------\n\n")
-    return status
 
 
 if __name__ == "__main__":

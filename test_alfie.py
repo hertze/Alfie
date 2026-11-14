@@ -8,11 +8,12 @@ Easter is checked against two other published algorithms for every Gregorian yea
 
 import contextlib
 import io
+import os
 import tempfile
 import unittest
-from argparse import Namespace
 from datetime import date, timedelta
 from pathlib import Path
+from unittest import mock
 
 import alfie
 
@@ -151,9 +152,88 @@ class SwedishCalendarTest(unittest.TestCase):
         self.assertEqual(ours, expected)
 
     def test_years_before_2005_are_refused(self):
-        args = Namespace(year=2004, language="sv", holidays=None, init=False)
         with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stderr(io.StringIO()):
-            self.assertEqual(alfie.make_diary(args, Path(folder)), 1)
+            self.assertEqual(alfie.make_diary(alfie.Settings(year=2004), Path(folder)), 1)
+
+
+class WordsTest(unittest.TestCase):
+    def parse(self, line):
+        return alfie.parse_words(line.split(), alfie.Settings())
+
+    def test_words_in_any_order(self):
+        command, settings, _ = self.parse("save-paper 2028 Pocket wg color")
+        self.assertIsNone(command)
+        self.assertEqual((settings.year, settings.paper, settings.layout, settings.color, settings.save_paper),
+                         (2028, "pocket", "wg", "color", True))
+
+    def test_commands_and_their_short_forms(self):
+        self.assertEqual(self.parse("list 2027")[0], "list")
+        self.assertEqual(self.parse("h")[0], "help")
+        self.assertEqual(self.parse("exit")[0], "quit")
+
+    def test_old_flags_still_work(self):
+        command, settings, _ = self.parse("2027 --paper pocket --save-paper --list --holidays none")
+        self.assertEqual(command, "list")
+        self.assertEqual((settings.paper, settings.save_paper, settings.calendar), ("pocket", True, "none"))
+
+    def test_a_setting_name_on_its_own_is_reported(self):
+        self.assertEqual(self.parse("layout")[2], ["layout"])
+
+    def test_mistakes_are_explained(self):
+        for line, expected in [("pockt", "Did you mean pocket?"),
+                               ("make list", "One command at a time"),
+                               ("27", "isn't a year"),
+                               ("personal-color-w2p-sv-2014-yes", "personal color w2p sv 2014"),
+                               ("banana", "help shows them all")]:
+            with self.assertRaises(alfie.WordError) as caught:
+                self.parse(line)
+            self.assertIn(expected, str(caught.exception))
+
+    def test_words_for_settings_leave_out_the_usual_ones(self):
+        settings = alfie.Settings(year=2028, paper="pocket", save_paper=True)
+        self.assertEqual(settings.words(), ["2028", "pocket", "save-paper"])
+        self.assertEqual(alfie.parse_words(settings.words(), alfie.Settings())[1], settings)
+
+
+class ShellTest(unittest.TestCase):
+    def run_shell(self, lines):
+        output = io.StringIO()
+        with tempfile.TemporaryDirectory() as folder, \
+                mock.patch("builtins.input", side_effect=lines), contextlib.redirect_stdout(output):
+            Path(folder, "dates.md").write_text("25 mars: Daniels födelsedag\n", encoding="utf-8")
+            status = alfie.shell(Path(folder))
+        return status, output.getvalue()
+
+    def test_settings_stay_between_lines(self):
+        status, output = self.run_shell(["pocket 2028", "save-paper", "layout", "pockt", "list", "quit"])
+        self.assertEqual(status, 0)
+        self.assertIn("2028 · pocket · w2pwf · sv · bw\n", output)
+        self.assertIn("2028 · pocket · w2pwf · sv · bw · 4 pages per sheet\n", output)
+        self.assertIn("Layouts:", output)
+        self.assertIn("Did you mean pocket?", output)
+        self.assertIn("Red days (●) and notes for 2028.", output)
+        self.assertIn("Your files: dates.md (1 every year, 0 for 2028 only)", output)
+
+    def test_end_of_input_leaves_the_shell(self):
+        self.assertEqual(self.run_shell([EOFError()])[0], 0)
+
+
+class InstallTest(unittest.TestCase):
+    def test_links_alfie_into_a_folder_on_path(self):
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            folder = Path(folder).resolve()
+            with mock.patch.dict(os.environ, {"PATH": str(folder)}):
+                self.assertEqual(alfie.install([Path("/nonexistent"), folder]), 0)
+                self.assertEqual((folder / "alfie").resolve(), Path(alfie.__file__).resolve())
+                self.assertEqual(alfie.install([folder]), 0)  # already there: fine
+
+    def test_leaves_another_alfie_alone(self):
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stderr(io.StringIO()):
+            folder = Path(folder).resolve()
+            (folder / "alfie").write_text("someone else's")
+            with mock.patch.dict(os.environ, {"PATH": str(folder)}):
+                self.assertEqual(alfie.install([folder]), 1)
+            self.assertEqual((folder / "alfie").read_text(), "someone else's")
 
 
 class ListTest(unittest.TestCase):
@@ -212,6 +292,28 @@ class SavePaperTest(unittest.TestCase):
                 self.assertGreaterEqual(min(left, bottom), alfie.SHEET_MARGIN)
                 self.assertLessEqual(right, alfie.SHEET_WIDTH - alfie.SHEET_MARGIN)
                 self.assertLessEqual(top, alfie.SHEET_HEIGHT - alfie.SHEET_MARGIN)
+
+    def test_crosses_only_run_along_cutting_lines(self):
+        for paper in ("pocket", "personal", "a6"):
+            layout = alfie.sheet_layout(paper)
+            boxes = [place.box for place in alfie.sheet_plan(layout, 107)[0]]
+            for box in boxes:
+                for (x1, y1), (x2, y2) in alfie.cross_lines(box):
+                    self.assertTrue(x1 in (box[0] - 20, box[2] - 20, box[0], box[2]) or y1 == y2)
+                    for left, bottom, right, top in boxes:  # never through the inside of a page
+                        if y1 == y2:
+                            inside = bottom < y1 < top and min(x2, right) > max(x1, left)
+                        else:
+                            inside = left < x1 < right and min(y2, top) > max(y1, bottom)
+                        self.assertFalse(inside, (paper, box, (x1, y1, x2, y2)))
+
+    def test_labels_stay_clear_of_the_crosses(self):
+        for paper in ("pocket", "personal", "a6"):
+            layout = alfie.sheet_layout(paper)
+            left, right = alfie.label_span(layout)
+            self.assertGreater(right - left, 60)
+            for box in (place.box for place in alfie.sheet_plan(layout, 107)[0]):
+                self.assertFalse(left < box[0] < right or left < box[2] < right)
 
     def test_every_page_once_and_each_back_behind_its_front(self):
         for paper in ("pocket", "personal", "a6"):

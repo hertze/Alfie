@@ -4,37 +4,48 @@ This is Alfie, a Python script that makes diary inserts for ring binders (pocket
 
 Alfie works out the Swedish holidays and other named days for every year by itself, so all you keep up to date is a short list of your own dates.
 
-## Quick start
+## Getting started
 
-From the terminal, in the Alfie folder. On a new install, start by making a file for your own dates (see [Red days and notes](#red-days-and-notes)):
+In a terminal, in the Alfie folder:
 
-    ./alfie.py --init
+    ./alfie.py install
 
-Then:
+That makes an `alfie` command that works in any folder. Then make a file for your own dates, like birthdays (see [Your dates](#your-dates)):
 
-    ./alfie.py 2027
+    alfie init
 
-makes `diary-personal-2027-sv.pdf` with your default settings and opens it. If you leave out the year, you get next year's diary.
+And make a diary:
 
-Run `./alfie.py` with no arguments at all to be asked step by step instead. At the end it shows the command that makes the same diary without the questions.
+    alfie 2027
 
-## Options
+That makes `diary-personal-2027-sv.pdf` with your usual settings and opens it. Without a year, you get next year's diary.
 
-| Option | What it does | Default |
-| --- | --- | --- |
-| *year* | four digits | next year |
-| `--paper` | `pocket`, `personal`, `a6` or `a5` | `personal` |
-| `--layout` | see below | `w2pwf` |
-| `--lang` | `sv`, `de` or `en` | `sv` |
-| `--color` / `--bw` | red days and notes in red, or all black | `--bw` |
-| `--save-paper` | puts several pages on each A4 sheet, see [Saving paper](#saving-paper) | off |
-| `--holidays` | `se` (the built-in Swedish calendar) or `none` | `se` for Swedish, otherwise `none` |
-| `--init` | writes a starter `dates.txt` to fill in (never overwrites your dates) | |
-| `--list` | shows the year's red days and notes instead of making the diary | |
-| `--tex-only` | writes the LaTeX file but doesn't typeset it | |
-| `--no-open` | doesn't open the PDF afterwards | |
+Until you've run `./alfie.py install`, type `./alfie.py` instead of `alfie`, in the Alfie folder.
 
-The defaults, and the name on the title page, are at the top of `alfie.py`. `./alfie.py --help` lists all of this too.
+## Words
+
+Alfie takes plain words, in any order:
+
+    alfie 2027 pocket                 pocket size
+    alfie 2027 pocket save-paper      four pocket pages on each A4 sheet
+    alfie 2027 wg color               the four-page week layout, in colour
+    alfie list 2027                   the red days and notes it will show
+    alfie help                        all the words
+
+| Words | What they do |
+| --- | --- |
+| `make`, `list`, `init`, `install`, `help` | what to do; `make` if you don't say |
+| a year, like `2027` | the year; next year if you leave it out |
+| `pocket`, `personal`, `a6`, `a5` | paper size |
+| `w1p`, `w1pnotes`, `w2p`, `w2pwf`, `1dp`, `wg` | layout, see below |
+| `sv`, `de`, `en` | language |
+| `color`, `bw` | red days and notes in red, or all black |
+| `save-paper`, `no-save-paper` | several pages on each A4 sheet, see [Saving paper](#saving-paper) |
+| `holidays`, `no-holidays` | the built-in Swedish calendar, on for Swedish diaries |
+| `tex-only`, `pdf` | only write the LaTeX file, or typeset it as usual |
+| `no-open`, `open` | whether to open the PDF afterwards |
+
+Your usual settings are in `DEFAULTS` at the top of `alfie.py`. If Alfie doesn't know a word, it stops and suggests the closest one. `paper` or `layout` on their own list the choices. The older style with dashes, like `--paper pocket --save-paper`, still works.
 
 Layouts:
 
@@ -45,21 +56,32 @@ Layouts:
 - `1dp`: a day per page
 - `wg`: a week on four pages, with week dots, week notes and a gratitude page
 
-Examples:
+### The shell
 
-    ./alfie.py 2027 --paper pocket
-    ./alfie.py 2027 --layout wg --color
-    ./alfie.py 2027 --paper pocket --save-paper
-    ./alfie.py 2027 --list
+Type `alfie` on its own to get a shell. It shows the current settings, and you type the same words to change them or to run a command. Tab completes the words, and the settings stay until you leave:
 
-## Red days and notes
+    $ alfie
+    Alfie 3.1. Type words to change the settings, make to make the diary, help for all the words, quit to leave.
+    2028 · personal · w2pwf · sv · bw
+    alfie> pocket save-paper
+    2028 · pocket · w2pwf · sv · bw · 4 pages per sheet
+    alfie> list
+    ...
+    alfie> make
+    alfie> quit
+
+So you can list the dates, fix your dates file, list again and make the diary without starting over.
+
+Alfie keeps its files in its own folder, next to `alfie.py`, whichever folder you run it from: your dates file, and the PDFs it makes.
+
+## Red days
 
 Sundays are always red. The built-in Swedish calendar adds, for any year from 2005 on:
 
 - **Red days:** Nyårsdagen, Trettondedag jul, Långfredagen, Påskdagen, Annandag påsk, Första maj, Kristi himmelsfärd, Pingstdagen, Nationaldagen, Midsommardagen, Alla helgons dag, Juldagen and Annandag jul.
 - **Named days:** Alla hjärtans dag, Skärtorsdagen, Påskafton, Annandag pingst, Mors dag, Midsommarafton, Halloween, Fars dag, Lucia, Julafton, Nyårsafton, and the days summer and winter time start.
 
-The red days follow the Swedish holiday law, [Lag (1989:253) om allmänna helgdagar](https://data.riksdagen.se/dokument/sfs-1989-253.html), as it has stood since 2005, when Nationaldagen became a red day and Annandag pingst stopped being one. Easter is worked out from the church's calculated full moon, not the astronomical one, as the law's preparatory work says ([prop. 1988/89:114](https://lagen.nu/prop/1988/89:114)). Midsommarafton, Julafton and Nyårsafton aren't red days by law. Alfie won't use the built-in calendar for years before 2005, which had other red days.
+The red days follow the Swedish holiday law, [Lag (1989:253) om allmänna helgdagar](https://data.riksdagen.se/dokument/sfs-1989-253.html), as it has stood since 2005, when Nationaldagen became a red day and Annandag pingst stopped being one. Easter is worked out from the church's calculated full moon, not the astronomical one, as the law's preparatory work says ([prop. 1988/89:114](https://lagen.nu/prop/1988/89:114)). Midsommarafton, Julafton and Nyårsafton aren't red days by law. Alfie won't use the built-in calendar for years before 2005, which had other red days; for those, add the word `no-holidays` and mark the red days yourself.
 
 `test_alfie.py` checks every year from 2005 to 9998 against a second implementation written straight from the law's wording, and Easter against two other published algorithms. Run the tests after changing anything in the calendar:
 
@@ -67,9 +89,9 @@ The red days follow the Swedish holiday law, [Lag (1989:253) om allmänna helgda
 
 You can change the named days in `swedish_calendar()` in `alfie.py`. The red days have to stay as the law says.
 
-Your own dates go in `dates.txt` or `dates.md`, in the folder you run Alfie from. They work the same; use `dates.md` if you like editing it as Markdown. If both are there, Alfie reads `dates.md` and tells you it's ignoring `dates.txt`. To get a starter file that explains the format:
+## Your dates
 
-    ./alfie.py --init
+Your own dates go in `dates.md` or `dates.txt` in the Alfie folder. They work the same; `dates.md` is handy if you like editing it as Markdown. If both are there, Alfie reads `dates.md` and tells you it's ignoring `dates.txt`. `alfie init` writes a starter file that explains the format.
 
 One date per line: day, month, a colon and the text. Start a line with `*` to make the day red. Dates at the top come back every year, like birthdays. Dates under a heading with a year are for that year only:
 
@@ -85,7 +107,7 @@ One date per line: day, month, a colon and the text. Start a line with `*` to ma
 
 A year section lasts until the next heading with a year, or `## Every year` (`## Varje år`), which goes back to dates for every year. Other lines starting with `#` are skipped, so you can use them for comments.
 
-Lines can also be written as a Markdown list, `- 21 januari: Annas födelsedag`. Note that a `*` at the start still means a red day, so use `-` for list items.
+Lines can also be written as a Markdown list, `- 21 januari: Annas födelsedag`. A `*` at the start still means a red day, so use `-` for list items.
 
 - Month names can be Swedish, English or German, written out or shortened to three letters (`21 jan`).
 - A day can have any number of notes. They're joined with commas: red days first, then your notes, then the other built-in days.
@@ -94,20 +116,20 @@ Lines can also be written as a Markdown list, `- 21 januari: Annas födelsedag`.
 
 Check what you'll get before you print:
 
-    ./alfie.py 2027 --list
+    alfie list 2027
 
 In the list, ● marks the red days: holidays, and days you marked with `*`. Ordinary Sundays are red in the diary too, but the list doesn't mark them.
 
 ### Week notes
 
-The `wg` layout can print a text, such as a quote, on each week's gratitude page. Put them in `weeknotes.txt` (or `weeknotes.md`), one per line, starting with the week number. Year headings work the same way as for your dates:
+The `wg` layout can print a text, such as a quote, on each week's gratitude page. Put them in `weeknotes.md` or `weeknotes.txt`, one per line, starting with the week number. Year headings work the same way as for your dates:
 
     1: Two roads diverged in a wood, and I--I took the one less traveled by, And that has made all the difference. --- Robert Frost
     3: Your mind is for having ideas, not holding them. --- David Allen
 
 ## Saving paper
 
-Normally every diary page gets its own A4 sheet, with crop marks around it. With `--save-paper`, Alfie puts several pages on each sheet instead:
+Normally every diary page gets its own A4 sheet, with crop marks around it. With the word `save-paper`, Alfie puts several pages on each sheet instead:
 
 | Paper | Pages on each side of an A4 sheet | 2027 diary (w2pwf) |
 | --- | --- | --- |
@@ -119,14 +141,14 @@ Normally every diary page gets its own A4 sheet, with crop marks around it. With
 The file is called `diary-pocket-2027-sv-4up.pdf` (or `-2up`). To print and cut it:
 
 1. Print it two-sided, flipping on the long edge (the usual two-sided setting), at 100 % size, not "fit to page".
-2. Cut the whole pile along the crop marks.
+2. Cut along the crop marks. Every page corner has a cross whose arms run along the page's edges, both outwards and in towards the middle of the page, so every piece you cut off still shows where its remaining edges are.
 3. Put pile A on top of pile B (on top of C and D for pocket). The leaves are then in order. The pile letters and the instructions are printed in the margin that gets cut off.
 
 Each page's back is printed right behind it, the right way up. To check your printer's setting before printing everything, print the first sheet only, cut out the title page and turn it over: the first week should be on the back, the right way up.
 
 ## Output
 
-The PDF ends up in the folder you run Alfie from. LaTeX works in a `build/` folder, which Alfie removes after a successful run, so only the PDF is left. With `--tex-only`, the LaTeX file stays in `build/`.
+The PDF ends up in the Alfie folder. LaTeX works in a `build/` folder, which Alfie removes after a successful run, so only the PDF is left. With `tex-only`, the LaTeX file stays in `build/`.
 
 If XeLaTeX fails, Alfie shows the error and where to find the full log, keeps `build/` so you can read it, and doesn't open an old PDF.
 
