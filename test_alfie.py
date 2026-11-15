@@ -310,50 +310,66 @@ def arguments(latex, command, count):
     return found
 
 
-class TurnedLayoutTest(unittest.TestCase):
-    def diary(self, layout="w2pcols", paper="personal", days=None):
+class ColumnLayoutTest(unittest.TestCase):
+    def diary(self, layout="w2pcolslandscape", paper="personal", days=None):
         return alfie.Diary(2027, paper, "bw", layout, "sv", alfie.Notes(days or {}, {}, []))
 
-    def test_monday_to_wednesday_above_the_rings_thursday_to_sunday_below(self):
-        diary = self.diary()
-        pages = arguments(diary.latex(), "\\AlfieWeekPage", 4)
-        self.assertEqual(len(pages), 2 * len(diary.weeks()))
-        above, below = pages[4], pages[5]  # the third week, week 2: 11-17 januari
-        for header in (above[0], below[0]):
-            self.assertIn("januari 2027", header)
-            self.assertIn("vecka 2", header)  # on both pages, as they're read one at a time
-        for column, (date, weekday) in zip(above[1:] + below[1:3],
-                                           [(11, "måndag"), (12, "tisdag"), (13, "onsdag"),
-                                            (14, "torsdag"), (15, "fredag")]):
-            self.assertIn(f"{{{date}}}", column)
-            self.assertIn(weekday, column)
-        weekend = below[3]
-        saturday, line, sunday = (weekend.index(text) for text in ("lördag", "{0.1pt}", "söndag"))
-        self.assertLess(saturday, line)
-        self.assertLess(line, sunday)
+    def test_monday_to_wednesday_on_the_left_thursday_to_sunday_on_the_right(self):
+        for layout in alfie.COLUMN_LAYOUTS:  # turned, the left-hand page is above the rings
+            diary = self.diary(layout)
+            pages = arguments(diary.latex(), "\\AlfieWeekPage", 4)
+            self.assertEqual(len(pages), 2 * len(diary.weeks()))
+            left, right = pages[4], pages[5]  # the third week, week 2: 11-17 januari
+            for header in (left[0], right[0]):
+                self.assertIn("januari 2027", header)
+                self.assertIn("vecka 2", header)  # on both pages, as in the sketch
+            for column, (date, weekday) in zip(left[1:] + right[1:3],
+                                               [(11, "måndag"), (12, "tisdag"), (13, "onsdag"),
+                                                (14, "torsdag"), (15, "fredag")]):
+                self.assertIn(f"{{{date}}}", column)
+                self.assertIn(weekday, column)
+            weekend = right[3]
+            saturday, line, sunday = (weekend.index(text) for text in ("lördag", "{0.1pt}", "söndag"))
+            self.assertLess(saturday, line)
+            self.assertLess(line, sunday)
 
     def test_notes_are_escaped_and_may_go_under_the_date(self):
         days = {date(2027, 1, 12): alfie.DayInfo(entries=[(1, 0, "Tandläkare 08.30 & frisör")])}
-        latex = self.diary(days=days).latex()
-        self.assertEqual(arguments(latex, "\\AlfieDay", 2)[0][1], "\\small \\notescolor{Tandläkare 08.30 \\& frisör}")
+        note = "\\small \\notescolor{Tandläkare 08.30 \\& frisör}"
+        turned = self.diary(days=days).latex()  # beside the weekday if there's room
+        self.assertEqual(arguments(turned, "\\AlfieDay", 2)[0][1], note)
+        upright = self.diary("w2pcolsportrait", days=days).latex()  # always under, flush left
+        self.assertNotIn("\\AlfieDay{", upright)
+        self.assertEqual(arguments(upright, "\\AlfieNoteUnder", 1), [[note]])
+        self.assertIn("tisdag\n\n\\AlfieNoteUnder", upright)
 
     def test_turned_pages_get_the_outer_margin_at_both_ends(self):
         for paper, size in alfie.PAPERS.items():
             turned = self.diary(paper=paper).preamble()
             self.assertIn(f"bottom={size['margin']}mm, top={size['margin']}mm", turned)
             self.assertIn(f"\\setlength\\AlfieGap{{{size['margin']}mm}}", turned)
-            self.assertIn(f"bottom={size['bottom']}mm, top={size['top']}mm", self.diary("w2pwf", paper).preamble())
+            self.assertIn("\\rotatebox{90}", turned)
 
-    def test_the_title_page_is_turned_too(self):
-        latex = self.diary().latex()
-        self.assertNotIn("\\maketitle", latex)
-        self.assertIn("\\AlfieTurned{\\centering", latex)
-        self.assertIn("Året 2027", latex)
+    def test_upright_pages_keep_the_usual_margins(self):
+        for paper, size in alfie.PAPERS.items():
+            for layout in ("w2pcolsportrait", "w2pwf"):
+                self.assertIn(f"bottom={size['bottom']}mm, top={size['top']}mm", self.diary(layout, paper).preamble())
+            upright = self.diary("w2pcolsportrait", paper).preamble()
+            self.assertIn("\\setlength\\AlfieGap{2mm}", upright)  # narrow columns: less space beside the lines
+            self.assertNotIn("rotatebox{90}", upright)
 
-    def test_other_layouts_are_not_turned(self):
-        self.assertLessEqual(alfie.TURNED_LAYOUTS, set(alfie.LAYOUTS))
-        for layout in set(alfie.LAYOUTS) - alfie.TURNED_LAYOUTS:
-            self.assertNotIn("\\AlfieTurned", self.diary(layout).latex(), layout)
+    def test_only_the_turned_layout_turns_its_title_page(self):
+        turned = self.diary().latex()
+        self.assertNotIn("\\maketitle", turned)
+        self.assertIn("\\AlfiePage{\\centering", turned)
+        self.assertIn("Året 2027", turned)
+        self.assertIn("\\maketitle", self.diary("w2pcolsportrait").latex())
+
+    def test_other_layouts_are_unchanged(self):
+        self.assertLessEqual(alfie.TURNED_LAYOUTS, alfie.COLUMN_LAYOUTS)
+        self.assertLessEqual(alfie.COLUMN_LAYOUTS, set(alfie.LAYOUTS))
+        for layout in set(alfie.LAYOUTS) - alfie.COLUMN_LAYOUTS:
+            self.assertNotIn("\\AlfiePage", self.diary(layout).latex(), layout)
 
 
 class InstallTest(unittest.TestCase):

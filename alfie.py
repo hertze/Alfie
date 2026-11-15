@@ -62,13 +62,17 @@ LAYOUTS = {
     "w2pwf": "a week on two pages, with more room for the weekdays",
     "1dp": "a day per page",
     "wg": "a week on four pages, with week dots, week notes and a gratitude page",
-    "w2pcols": "a week on two pages in columns, for a binder turned on its side",
+    "w2pcolslandscape": "a week on two pages in columns, for a binder turned on its side",
+    "w2pcolsportrait": "a week on two pages in columns, for a binder held upright",
 }
+
+# Layouts with the days side by side in columns.
+COLUMN_LAYOUTS = {"w2pcolslandscape", "w2pcolsportrait"}
 
 # Layouts for a binder turned a quarter turn clockwise, so the rings run across the middle.
 # Each page is laid out across and printed turned: the left-hand page then reads above the
 # rings and the right-hand page below them.
-TURNED_LAYOUTS = {"w2pcols"}
+TURNED_LAYOUTS = {"w2pcolslandscape"}
 
 PAPERS = {  # millimetres
     "pocket": {"width": "83", "height": "122", "margin": "3", "left": "13", "top": "1", "bottom": "4"},
@@ -460,12 +464,13 @@ def week_number(day):
     return str(day.isocalendar()[1])
 
 
-# For the turned layouts. A turned page is a box as wide as the page is tall, turned a quarter
-# turn. On a week page the days stand in three columns with a line between each, reaching
-# from just above the dates (\AlfieDayTop) down to the bottom margin. Where the dates go depends
-# on the header, so the header is first set in a box on its own and measured. Minipages set
-# \parskip to 0pt, so the page's \parskip is put back inside them, to space things as usual.
-TURNED_MACROS = r"""
+# For the column layouts. A page is one box, \AlfieAcross wide and \AlfieDown tall; on a turned
+# page that's as wide as the page is tall, and \AlfieTurn turns it a quarter turn. On a week
+# page the days stand in three columns with a line between each, reaching from just above the
+# dates (\AlfieDayTop) down to the bottom margin. Where the dates go depends on the header, so
+# the header is first set in a box on its own and measured. Minipages set \parskip to 0pt, so
+# the page's \parskip is put back inside them, to space things as usual.
+COLUMN_MACROS = r"""
 \newlength\AlfieGap
 \newlength\AlfieParskip
 \AtBeginDocument{\setlength\AlfieParskip{\parskip}}
@@ -474,13 +479,13 @@ TURNED_MACROS = r"""
 \newsavebox\AlfieHeaderBox
 \newsavebox\AlfieDayBox
 \newsavebox\AlfieNoteBox
-\newcommand\AlfieTurned[1]{\noindent\rotatebox{90}{\begin{minipage}[b][\textwidth][t]{\textheight}%
+\newcommand\AlfiePage[1]{\noindent\AlfieTurn{\begin{minipage}[b][\AlfieDown][t]{\AlfieAcross}%
   \setlength\parskip{\AlfieParskip}#1\end{minipage}}\newpage}
 \newcommand\AlfieWeekPage[4]{%
-  \sbox\AlfieHeaderBox{\begin{minipage}[b]{\textheight}\setlength\parskip{\AlfieParskip}%
+  \sbox\AlfieHeaderBox{\begin{minipage}[b]{\AlfieAcross}\setlength\parskip{\AlfieParskip}%
     \rule{0pt}{\topskip}#1\par\normalsize\noindent\rule{0pt}{\AlfieDayTop}\end{minipage}}%
-  \setlength\AlfieColumnHeight{\dimexpr\textwidth-\ht\AlfieHeaderBox+\AlfieDayTop\relax}%
-  \AlfieTurned{\rule{0pt}{\topskip}#1\par\normalsize\noindent
+  \setlength\AlfieColumnHeight{\dimexpr\AlfieDown-\ht\AlfieHeaderBox+\AlfieDayTop\relax}%
+  \AlfiePage{\rule{0pt}{\topskip}#1\par\normalsize\noindent
     \makebox[\linewidth][s]{\AlfieColumn{#2}\AlfieLine\AlfieColumn{#3}\AlfieLine\AlfieColumn{#4}}\par}}
 \newcommand\AlfieColumn[1]{\begin{minipage}[t][\AlfieColumnHeight][s]{\dimexpr(\linewidth-4\AlfieGap)/3\relax}%
   \setlength\parskip{\AlfieParskip}\rule{0pt}{\AlfieDayTop}#1\vspace{\stretch{1}}\end{minipage}}
@@ -489,6 +494,7 @@ TURNED_MACROS = r"""
   \ifdim\dimexpr\wd\AlfieDayBox+1em+\wd\AlfieNoteBox\relax>\linewidth
     \usebox\AlfieDayBox\par{\setlength\parskip{0pt}\raggedleft#2\par}%
   \else\usebox\AlfieDayBox\hfill\usebox\AlfieNoteBox\par\fi}
+\newcommand\AlfieNoteUnder[1]{{\setlength\parskip{0pt}\raggedright#1\par}}
 """
 
 
@@ -512,7 +518,8 @@ class Diary:
             "w2pwf": lambda: self.week_on_two_pages(top_stretch=0.2, weekend_stretch=0.6),
             "1dp": self.day_per_page,
             "wg": self.week_gold,
-            "w2pcols": self.week_in_columns,
+            "w2pcolslandscape": self.week_in_columns,
+            "w2pcolsportrait": self.week_in_columns,
         }
         return (self.preamble(trimmed, back_offset) + self.opening() + layouts[self.layout]()
                 + "\\end{document}\n\n")
@@ -597,8 +604,17 @@ class Diary:
         if self.turned:
             # The space between a column's text and the line beside it is the outer margin
             # too, which puts the lines between the days at a third and two thirds of the page.
-            lines[-1:-1] = [*TURNED_MACROS.strip().splitlines(),
+            lines[-1:-1] = [*COLUMN_MACROS.strip().splitlines(),
+                            "\\newcommand\\AlfieAcross{\\textheight}\\newcommand\\AlfieDown{\\textwidth}",
+                            "\\newcommand\\AlfieTurn[1]{\\rotatebox{90}{#1}}",
                             f"\\setlength\\AlfieGap{{{paper['margin']}mm}}"]
+        elif self.layout in COLUMN_LAYOUTS:
+            # Upright, the columns are narrow: with 2 mm beside the lines, the longest weekday
+            # (Donnerstag) and holiday word (Midsommardagen) still fit on pocket paper.
+            lines[-1:-1] = [*COLUMN_MACROS.strip().splitlines(),
+                            "\\newcommand\\AlfieAcross{\\textwidth}\\newcommand\\AlfieDown{\\textheight}",
+                            "\\newcommand\\AlfieTurn[1]{#1}",
+                            "\\setlength\\AlfieGap{2mm}"]
         if back_offset and not trimmed:
             # Every second page is the back of a sheet. Move it down by back_offset (page and
             # crop marks together) when it's written out, to make up for the printer.
@@ -619,7 +635,7 @@ class Diary:
         if self.turned:  # what \maketitle makes, on a turned page
             return (
                 "\\begin{document}\n\n"
-                "\\AlfieTurned{\\centering\\vspace{\\stretch{1}}\n"
+                "\\AlfiePage{\\centering\\vspace{\\stretch{1}}\n"
                 f"{{\\LARGE {title}\\par}}\n\\vspace{{3em}}\n"
                 f"{{\\large {author}\\par}}\n\\vspace{{1.5em}}\n"
                 "{\\large \\today\\par}\n\\vspace{\\stretch{1}}}\n\n"
@@ -674,14 +690,19 @@ class Diary:
         return text + "\n\n"
 
     def column_day(self, day):
-        """A day at the top of a column on a turned page: the date and weekday as on a left-hand
-        page, any notes flush right beside them, or under them when there isn't room."""
+        """A day at the top of a column: the date and weekday as on a left-hand page. Turned,
+        any notes go flush right beside them, or under them when there isn't room. Upright,
+        the columns are narrow, so notes always go under, flush left: the whole width of the
+        column is needed for a long word like Midsommardagen on pocket paper."""
         style, circle, name = self.day_heading(day)
         heading = style + circle + " \\hspace{0mm} " + name
         note = latex_escape(self.note(day))
         if not note:
             return heading + "\n\n"
-        return "\\AlfieDay{" + heading + "}{\\small \\notescolor{" + note + "}}\n\n"
+        note = "{\\small \\notescolor{" + note + "}}"
+        if self.turned:
+            return "\\AlfieDay{" + heading + "}" + note + "\n\n"
+        return heading + "\n\n\\AlfieNoteUnder" + note + "\n\n"
 
     # --- Layouts
 
@@ -768,7 +789,7 @@ class Diary:
             parts.append("\\vspace{\\stretch{1}}\n\n\\pagebreak\n\n")
         return "".join(parts)
 
-    def week_in_columns(self):  # w2pcols: for a binder turned on its side
+    def week_in_columns(self):  # w2pcolslandscape and w2pcolsportrait
         parts = []
         for week in self.weeks():
             number = week_number(week[0])
@@ -776,7 +797,7 @@ class Diary:
             weekend = self.column_day(sat) + separator() + self.column_day(sun)  # sharing a column
             pages = [(week[0:3], [self.column_day(mon), self.column_day(tue), self.column_day(wed)]),
                      (week[3:7], [self.column_day(thu), self.column_day(fri), weekend])]
-            for days, columns in pages:  # above the rings, then below them
+            for days, columns in pages:  # left-hand page (above the rings when turned), then right
                 header = self.format_header(self.header(days), number)
                 parts.append("\\AlfieWeekPage{" + header + "}{" + "}{".join(columns) + "}\n\n")
         return "".join(parts)
@@ -1170,7 +1191,8 @@ def settings_table(settings, before=None):
         rows = rows[:8] + [row for row in rows[8:] if row[1] not in ("pdf", "yes")]
     else:
         rows = [row for row, old in zip(rows, setting_rows(before)) if row != old]
-    return "\n".join(f"  {label:<11}{value:<10}{meaning}".rstrip() for label, value, meaning in rows)
+    width = max([10] + [len(value) + 2 for _, value, _ in rows])  # wider for a long layout name
+    return "\n".join(f"  {label:<11}{value:<{width}}{meaning}".rstrip() for label, value, meaning in rows)
 
 
 COMMANDS = ["make", "list", "settings", "init", "install", "help", "quit"]
@@ -1193,7 +1215,7 @@ SETTING_WORDS = {
 CHOICES = {
     "paper": "Paper sizes: " + ", ".join(f"{name} ({size['width']} × {size['height']} mm)"
                                         for name, size in PAPERS.items()),
-    "layout": "Layouts:\n" + "\n".join(f"  {name:<9} {text}" for name, text in LAYOUTS.items()),
+    "layout": "Layouts:\n" + "\n".join(f"  {name:<{max(map(len, LAYOUTS))}} {text}" for name, text in LAYOUTS.items()),
     "lang": "Languages: sv (Swedish), de (German), en (English)",
     "year": "The year: four digits, like 2028. Without one you get next year's diary.",
     "back": "Back side: back=+1.0 moves the back of each sheet 1.0 mm down, for a printer that "

@@ -37,7 +37,7 @@ Alfie takes plain words, in any order:
 | `make`, `list`, `settings`, `init`, `install`, `help` | what to do; `make` if you don't say |
 | a year, like `2027` | the year; next year if you leave it out |
 | `pocket`, `personal`, `a6`, `a5` | paper size |
-| `w1p`, `w1pnotes`, `w2p`, `w2pwf`, `1dp`, `wg`, `w2pcols` | layout, see below |
+| `w1p`, `w1pnotes`, `w2p`, `w2pwf`, `1dp`, `wg`, `w2pcolslandscape`, `w2pcolsportrait` | layout, see below |
 | `sv`, `de`, `en` | language |
 | `color`, `bw` | red days and notes in red, or all black |
 | `save-paper`, `no-save-paper` | several pages on each A4 sheet, see [Saving paper](#saving-paper) |
@@ -56,18 +56,18 @@ Layouts:
 - `w2pwf`: a week on two pages, with more room for the weekdays
 - `1dp`: a day per page
 - `wg`: a week on four pages, with week dots, week notes and a gratitude page
-- `w2pcols`: a week on two pages in columns, for a binder turned on its side, see below
+- `w2pcolslandscape`: a week on two pages in columns, for a binder turned on its side, see below
+- `w2pcolsportrait`: the same week in columns, for a binder held upright, see below
 
-### A binder turned on its side
+### The week in columns
 
-`w2pcols` is for using the binder turned a quarter turn clockwise, so the rings run across the middle. Each page is laid out across, and printed turned so that it reads the right way up:
+Both column layouts put Monday, Tuesday and Wednesday side by side in three columns on the left-hand page, and Thursday, Friday, and Saturday and Sunday sharing the last column on the right-hand page. Both pages have the month and the week number at the top. The lines between the columns are as thin as the lines between the days in the other layouts.
 
-- Above the rings: Monday, Tuesday and Wednesday, side by side in three columns.
-- Below the rings: Thursday, Friday, and Saturday and Sunday sharing the last column.
+`w2pcolslandscape` is for using the binder turned a quarter turn clockwise, so the rings run across the middle: Monday to Wednesday above the rings, Thursday to Sunday below. Each page is laid out across, and printed turned so that it reads the right way up; the title page is turned too. The turned pages keep the wide margin where the holes are and get the outer margin on the other three sides, and the lines divide the page in thirds, so the columns above and below the rings line up. A note goes beside its weekday if there's room, otherwise under it, flush right.
 
-Both pages have the month and the week number at the top. The lines between the columns are as thin as the lines between the days in the other layouts, and they divide the page in thirds, so the columns above and below the rings line up. A note goes beside its weekday if there's room, otherwise under it. The title page is turned too.
+`w2pcolsportrait` is the same week on ordinary upright pages, with the usual margins. Its columns are narrow, so notes always go on the line under the date, flush left with the circle, where they get the whole width of the column. There's 2 mm between a column's text and the lines beside it: enough for the longest weekday (Donnerstag) and holiday word (Midsommardagen) on pocket paper.
 
-The turned pages keep the paper's margins: the wide one where the holes are, and the outer margin on the other three sides. Printing, saving paper and the printer adjustment work as for the other layouts.
+Printing, saving paper and the printer adjustment work as for the other layouts.
 
 ### The shell
 
