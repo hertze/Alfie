@@ -37,7 +37,7 @@ Alfie takes plain words, in any order:
 | `make`, `list`, `settings`, `init`, `install`, `help` | what to do; `make` if you don't say |
 | a year, like `2027` | the year; next year if you leave it out |
 | `pocket`, `personal`, `a6`, `a5` | paper size |
-| `w1p`, `w1pnotes`, `w2p`, `w2pwf`, `1dp`, `wg` | layout, see below |
+| `w1p`, `w1pnotes`, `w2p`, `w2pwf`, `1dp`, `wg`, `w2pcols` | layout, see below |
 | `sv`, `de`, `en` | language |
 | `color`, `bw` | red days and notes in red, or all black |
 | `save-paper`, `no-save-paper` | several pages on each A4 sheet, see [Saving paper](#saving-paper) |
@@ -56,6 +56,18 @@ Layouts:
 - `w2pwf`: a week on two pages, with more room for the weekdays
 - `1dp`: a day per page
 - `wg`: a week on four pages, with week dots, week notes and a gratitude page
+- `w2pcols`: a week on two pages in columns, for a binder turned on its side, see below
+
+### A binder turned on its side
+
+`w2pcols` is for using the binder turned a quarter turn clockwise, so the rings run across the middle. Each page is laid out across, and printed turned so that it reads the right way up:
+
+- Above the rings: Monday, Tuesday and Wednesday, side by side in three columns.
+- Below the rings: Thursday, Friday, and Saturday and Sunday sharing the last column.
+
+Both pages have the month and the week number at the top. The lines between the columns are as thin as the lines between the days in the other layouts, and they divide the page in thirds, so the columns above and below the rings line up. A note goes beside its weekday if there's room, otherwise under it. The title page is turned too.
+
+The turned pages keep the paper's margins: the wide one where the holes are, and the outer margin on the other three sides. Printing, saving paper and the printer adjustment work as for the other layouts.
 
 ### The shell
 

@@ -289,6 +289,73 @@ class BackSideTest(unittest.TestCase):
         self.assertNotIn("AlfieSide", diary.latex(trimmed=True, back_offset=0.9))  # the sheets move them
 
 
+def arguments(latex, command, count):
+    """The {...} arguments of every use of a LaTeX command, as lists of strings."""
+    found, start = [], latex.find(command + "{")
+    while start != -1:
+        args, pos = [], start + len(command)
+        for _ in range(count):
+            depth, begin = 0, pos
+            while True:
+                if latex[pos] == "\\":
+                    pos += 2  # an escaped brace, \{ or \}, doesn't count
+                    continue
+                depth += {"{": 1, "}": -1}.get(latex[pos], 0)
+                pos += 1
+                if depth == 0:
+                    break
+            args.append(latex[begin + 1:pos - 1])
+        found.append(args)
+        start = latex.find(command + "{", pos)
+    return found
+
+
+class TurnedLayoutTest(unittest.TestCase):
+    def diary(self, layout="w2pcols", paper="personal", days=None):
+        return alfie.Diary(2027, paper, "bw", layout, "sv", alfie.Notes(days or {}, {}, []))
+
+    def test_monday_to_wednesday_above_the_rings_thursday_to_sunday_below(self):
+        diary = self.diary()
+        pages = arguments(diary.latex(), "\\AlfieWeekPage", 4)
+        self.assertEqual(len(pages), 2 * len(diary.weeks()))
+        above, below = pages[4], pages[5]  # the third week, week 2: 11-17 januari
+        for header in (above[0], below[0]):
+            self.assertIn("januari 2027", header)
+            self.assertIn("vecka 2", header)  # on both pages, as they're read one at a time
+        for column, (date, weekday) in zip(above[1:] + below[1:3],
+                                           [(11, "måndag"), (12, "tisdag"), (13, "onsdag"),
+                                            (14, "torsdag"), (15, "fredag")]):
+            self.assertIn(f"{{{date}}}", column)
+            self.assertIn(weekday, column)
+        weekend = below[3]
+        saturday, line, sunday = (weekend.index(text) for text in ("lördag", "{0.1pt}", "söndag"))
+        self.assertLess(saturday, line)
+        self.assertLess(line, sunday)
+
+    def test_notes_are_escaped_and_may_go_under_the_date(self):
+        days = {date(2027, 1, 12): alfie.DayInfo(entries=[(1, 0, "Tandläkare 08.30 & frisör")])}
+        latex = self.diary(days=days).latex()
+        self.assertEqual(arguments(latex, "\\AlfieDay", 2)[0][1], "\\small \\notescolor{Tandläkare 08.30 \\& frisör}")
+
+    def test_turned_pages_get_the_outer_margin_at_both_ends(self):
+        for paper, size in alfie.PAPERS.items():
+            turned = self.diary(paper=paper).preamble()
+            self.assertIn(f"bottom={size['margin']}mm, top={size['margin']}mm", turned)
+            self.assertIn(f"\\setlength\\AlfieGap{{{size['margin']}mm}}", turned)
+            self.assertIn(f"bottom={size['bottom']}mm, top={size['top']}mm", self.diary("w2pwf", paper).preamble())
+
+    def test_the_title_page_is_turned_too(self):
+        latex = self.diary().latex()
+        self.assertNotIn("\\maketitle", latex)
+        self.assertIn("\\AlfieTurned{\\centering", latex)
+        self.assertIn("Året 2027", latex)
+
+    def test_other_layouts_are_not_turned(self):
+        self.assertLessEqual(alfie.TURNED_LAYOUTS, set(alfie.LAYOUTS))
+        for layout in set(alfie.LAYOUTS) - alfie.TURNED_LAYOUTS:
+            self.assertNotIn("\\AlfieTurned", self.diary(layout).latex(), layout)
+
+
 class InstallTest(unittest.TestCase):
     def test_links_alfie_into_a_folder_on_path(self):
         with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):

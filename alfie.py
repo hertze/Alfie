@@ -62,7 +62,13 @@ LAYOUTS = {
     "w2pwf": "a week on two pages, with more room for the weekdays",
     "1dp": "a day per page",
     "wg": "a week on four pages, with week dots, week notes and a gratitude page",
+    "w2pcols": "a week on two pages in columns, for a binder turned on its side",
 }
+
+# Layouts for a binder turned a quarter turn clockwise, so the rings run across the middle.
+# Each page is laid out across and printed turned: the left-hand page then reads above the
+# rings and the right-hand page below them.
+TURNED_LAYOUTS = {"w2pcols"}
 
 PAPERS = {  # millimetres
     "pocket": {"width": "83", "height": "122", "margin": "3", "left": "13", "top": "1", "bottom": "4"},
@@ -454,12 +460,45 @@ def week_number(day):
     return str(day.isocalendar()[1])
 
 
+# For the turned layouts. A turned page is a box as wide as the page is tall, turned a quarter
+# turn. On a week page the days stand in three columns with a line between each, reaching
+# from just above the dates (\AlfieDayTop) down to the bottom margin. Where the dates go depends
+# on the header, so the header is first set in a box on its own and measured. Minipages set
+# \parskip to 0pt, so the page's \parskip is put back inside them, to space things as usual.
+TURNED_MACROS = r"""
+\newlength\AlfieGap
+\newlength\AlfieParskip
+\AtBeginDocument{\setlength\AlfieParskip{\parskip}}
+\newlength\AlfieDayTop \setlength\AlfieDayTop{3.4mm}
+\newlength\AlfieColumnHeight
+\newsavebox\AlfieHeaderBox
+\newsavebox\AlfieDayBox
+\newsavebox\AlfieNoteBox
+\newcommand\AlfieTurned[1]{\noindent\rotatebox{90}{\begin{minipage}[b][\textwidth][t]{\textheight}%
+  \setlength\parskip{\AlfieParskip}#1\end{minipage}}\newpage}
+\newcommand\AlfieWeekPage[4]{%
+  \sbox\AlfieHeaderBox{\begin{minipage}[b]{\textheight}\setlength\parskip{\AlfieParskip}%
+    \rule{0pt}{\topskip}#1\par\normalsize\noindent\rule{0pt}{\AlfieDayTop}\end{minipage}}%
+  \setlength\AlfieColumnHeight{\dimexpr\textwidth-\ht\AlfieHeaderBox+\AlfieDayTop\relax}%
+  \AlfieTurned{\rule{0pt}{\topskip}#1\par\normalsize\noindent
+    \makebox[\linewidth][s]{\AlfieColumn{#2}\AlfieLine\AlfieColumn{#3}\AlfieLine\AlfieColumn{#4}}\par}}
+\newcommand\AlfieColumn[1]{\begin{minipage}[t][\AlfieColumnHeight][s]{\dimexpr(\linewidth-4\AlfieGap)/3\relax}%
+  \setlength\parskip{\AlfieParskip}\rule{0pt}{\AlfieDayTop}#1\vspace{\stretch{1}}\end{minipage}}
+\newcommand\AlfieLine{\hfill\vrule width 0.1pt\hfill}
+\newcommand\AlfieDay[2]{\sbox\AlfieDayBox{#1}\sbox\AlfieNoteBox{#2}%
+  \ifdim\dimexpr\wd\AlfieDayBox+1em+\wd\AlfieNoteBox\relax>\linewidth
+    \usebox\AlfieDayBox\par{\setlength\parskip{0pt}\raggedleft#2\par}%
+  \else\usebox\AlfieDayBox\hfill\usebox\AlfieNoteBox\par\fi}
+"""
+
+
 class Diary:
     def __init__(self, year, paper, color, layout, language, notes):
         self.year = year
         self.paper = paper
         self.color = color
         self.layout = layout
+        self.turned = layout in TURNED_LAYOUTS
         self.strings = LANGUAGES[language]
         self.notes = notes
 
@@ -473,6 +512,7 @@ class Diary:
             "w2pwf": lambda: self.week_on_two_pages(top_stretch=0.2, weekend_stretch=0.6),
             "1dp": self.day_per_page,
             "wg": self.week_gold,
+            "w2pcols": self.week_in_columns,
         }
         return (self.preamble(trimmed, back_offset) + self.opening() + layouts[self.layout]()
                 + "\\end{document}\n\n")
@@ -516,6 +556,9 @@ class Diary:
 
     def preamble(self, trimmed=False, back_offset=0.0):
         paper = PAPERS[self.paper]
+        # Turned, the page's top and bottom become its left and right edges, so they get the
+        # outer margin, like the ends of the lines on an unturned page.
+        top, bottom = (paper["margin"], paper["margin"]) if self.turned else (paper["top"], paper["bottom"])
         fill = "red!60!black" if self.color == "color" else "black"
         notes = "\\textcolor{red!60!black}{#1}" if self.color == "color" else "#1"
         lines = [
@@ -537,7 +580,7 @@ class Diary:
             "SmallCapsFeatures={LetterSpace=1.15, Letters=SmallCaps}, Numbers={OldStyle, Proportional}, "
             "Scale=0.75] {Cronos Pro Light}",
             f"\\geometry{{paperwidth={paper['width']}mm, paperheight={paper['height']}mm, "
-            f"margin={paper['margin']}mm, bottom={paper['bottom']}mm, top={paper['top']}mm, "
+            f"margin={paper['margin']}mm, bottom={bottom}mm, top={top}mm, "
             f"left={paper['left']}mm, nohead}}",
             "",
             "\\newcommand*\\circled[1]{\\tikz[baseline=(char.base)]{\\node[shape=circle,draw,inner sep=1pt,"
@@ -551,6 +594,11 @@ class Diary:
             "\\pagenumbering{gobble}",
             "",
         ]
+        if self.turned:
+            # The space between a column's text and the line beside it is the outer margin
+            # too, which puts the lines between the days at a third and two thirds of the page.
+            lines[-1:-1] = [*TURNED_MACROS.strip().splitlines(),
+                            f"\\setlength\\AlfieGap{{{paper['margin']}mm}}"]
         if back_offset and not trimmed:
             # Every second page is the back of a sheet. Move it down by back_offset (page and
             # crop marks together) when it's written out, to make up for the printer.
@@ -565,12 +613,21 @@ class Diary:
 
     def opening(self):
         s = self.strings
-        title = s["title"].format(paper=self.paper.title())
+        title = (f"\\bfseries\\itshape \\Huge {s['the_year']} {self.year}\\\\ "
+                 f"\\vspace{{0.25em}} \\Large \\normalfont {s['title'].format(paper=self.paper.title())}")
+        author = f"\\emph{{{s['by']}}} {AUTHOR}"
+        if self.turned:  # what \maketitle makes, on a turned page
+            return (
+                "\\begin{document}\n\n"
+                "\\AlfieTurned{\\centering\\vspace{\\stretch{1}}\n"
+                f"{{\\LARGE {title}\\par}}\n\\vspace{{3em}}\n"
+                f"{{\\large {author}\\par}}\n\\vspace{{1.5em}}\n"
+                "{\\large \\today\\par}\n\\vspace{\\stretch{1}}}\n\n"
+            )
         return (
             "\\begin{document}\n\n"
-            f"\\title{{\\bfseries\\itshape \\Huge {s['the_year']} {self.year}\\\\ "
-            f"\\vspace{{0.25em}} \\Large \\normalfont {title}}}\n"
-            f"\\author{{\\emph{{{s['by']}}} {AUTHOR}}}\n"
+            f"\\title{{{title}}}\n"
+            f"\\author{{{author}}}\n"
             "\\maketitle\n\n"
             "\\pagebreak\n\n"
         )
@@ -585,10 +642,9 @@ class Diary:
             header += f"\\normalsize {self.strings['this_week']}\n\n"
         return header
 
-    def format_day(self, day, recto):
-        """The date in a circle, the weekday and any notes. Red days get a filled circle and
-        italics, Saturdays a black circle. On right-hand (recto) pages the date goes right."""
-        note = latex_escape(self.note(day))
+    def day_heading(self, day):
+        """(style, circle, weekday) for a day: the date in a circle and the weekday. Red days
+        get a filled circle and italics, Saturdays a black circle."""
         number = str(day.day)
         style = "\\large\\bfseries "
         if self.is_red(day):  # before the Saturday check, so a red Saturday still looks red
@@ -600,9 +656,15 @@ class Diary:
                       + number + "}};}  ")
         else:
             circle = "\\circled{" + number + "} "
-        name = "\\normalfont\\normalsize " + self.day_name(day)
+        return style, circle, "\\normalfont\\normalsize " + self.day_name(day)
+
+    def format_day(self, day, recto):
+        """The date in a circle, the weekday and any notes. On right-hand (recto) pages the
+        date goes right."""
+        note = latex_escape(self.note(day))
+        style, circle, name = self.day_heading(day)
         if recto:
-            text = "\\hfill " + style + name + " \\hspace{0mm} " + circle
+            text = "\\hfill " + name + " \\hspace{0mm} {" + style + circle.rstrip() + "}"  # in braces: the bold stays here
             if note:
                 text = "\\small \\notescolor{" + note + "} " + text
         else:
@@ -610,6 +672,16 @@ class Diary:
             if note:
                 text += "\\hfill \\small \\notescolor{" + note + "}"
         return text + "\n\n"
+
+    def column_day(self, day):
+        """A day at the top of a column on a turned page: the date and weekday as on a left-hand
+        page, any notes flush right beside them, or under them when there isn't room."""
+        style, circle, name = self.day_heading(day)
+        heading = style + circle + " \\hspace{0mm} " + name
+        note = latex_escape(self.note(day))
+        if not note:
+            return heading + "\n\n"
+        return "\\AlfieDay{" + heading + "}{\\small \\notescolor{" + note + "}}\n\n"
 
     # --- Layouts
 
@@ -694,6 +766,19 @@ class Diary:
             parts.append("\\vspace{\\stretch{3}}\\rule{2cm}{0.1pt}\n\n")
             parts.append("\\vspace{-2mm}" + self.strings["gratitude"] + "\n\n")
             parts.append("\\vspace{\\stretch{1}}\n\n\\pagebreak\n\n")
+        return "".join(parts)
+
+    def week_in_columns(self):  # w2pcols: for a binder turned on its side
+        parts = []
+        for week in self.weeks():
+            number = week_number(week[0])
+            mon, tue, wed, thu, fri, sat, sun = week
+            weekend = self.column_day(sat) + separator() + self.column_day(sun)  # sharing a column
+            pages = [(week[0:3], [self.column_day(mon), self.column_day(tue), self.column_day(wed)]),
+                     (week[3:7], [self.column_day(thu), self.column_day(fri), weekend])]
+            for days, columns in pages:  # above the rings, then below them
+                header = self.format_header(self.header(days), number)
+                parts.append("\\AlfieWeekPage{" + header + "}{" + "}{".join(columns) + "}\n\n")
         return "".join(parts)
 
     # --- Checking
