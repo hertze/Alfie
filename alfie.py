@@ -11,6 +11,7 @@
 #   alfie 2027                     the 2027 diary, with the defaults below
 #   alfie 2027 pocket save-paper   pocket size, four pages on each A4 sheet
 #   alfie list 2027                the red days and notes it will show
+#   alfie 2027 from 15 mars to 30 april   only those leaves, to slide into the diary
 #   alfie                          a shell, where you type the same words
 #   alfie help                     all the words
 #
@@ -73,6 +74,20 @@ COLUMN_LAYOUTS = {"w2pcolslandscape", "w2pcolsportrait"}
 # Each page is laid out across and printed turned: the left-hand page then reads above the
 # rings and the right-hand page below them.
 TURNED_LAYOUTS = {"w2pcolslandscape"}
+
+# How each layout spreads a week over its pages, as (first, last + 1) of the days on each page,
+# Monday being 0. Used to find the pages for a few dates (from= and to=). A page without dates
+# of its own counts the days it goes with, so it's printed with them.
+WEEK_PAGES = {
+    "w1p": [(0, 7)],
+    "w1pnotes": [(0, 7), (0, 7)],              # the notes page goes with its week
+    "w2p": [(0, 3), (3, 7)],
+    "w2pwf": [(0, 3), (3, 7)],
+    "1dp": [(day, day + 1) for day in range(7)],
+    "wg": [(0, 3), (3, 5), (5, 7), (5, 7)],    # the week note page goes with the weekend
+    "w2pcolslandscape": [(0, 3), (3, 7)],
+    "w2pcolsportrait": [(0, 3), (3, 7)],
+}
 
 PAPERS = {  # millimetres
     "pocket": {"width": "83", "height": "122", "margin": "3", "left": "13", "top": "1", "bottom": "4"},
@@ -536,6 +551,14 @@ class Diary:
             monday += timedelta(days=7)
         return weeks
 
+    def page_days(self):
+        """The days on each page, in order: the title page first, with none."""
+        return [[]] + [week[first:last] for week in self.weeks() for first, last in WEEK_PAGES[self.layout]]
+
+    def day_text(self, day):
+        """'15 mars', with the year when it isn't the diary's."""
+        return f"{day.day} {self.month_name(day)}" + ("" if day.year == self.year else f" {day.year}")
+
     def month_name(self, day):
         return self.strings["months"][day.month - 1]
 
@@ -804,9 +827,12 @@ class Diary:
 
     # --- Checking
 
-    def print_list(self):
-        print(f"\nRed days (●) and notes for {self.year}. Ordinary Sundays are red too, but aren't marked.\n")
-        for day in sorted(day for day in self.notes.days if day.year == self.year):
+    def print_list(self, span=None):
+        """The red days and notes for the year, or with span (first, last) for those days."""
+        days = (f"{self.day_text(span[0])} to {self.day_text(span[1])}" if span else str(self.year))
+        print(f"\nRed days (●) and notes for {days}. Ordinary Sundays are red too, but aren't marked.\n")
+        wanted = (lambda day: span[0] <= day <= span[1]) if span else (lambda day: day.year == self.year)
+        for day in sorted(day for day in self.notes.days if wanted(day)):
             info = self.notes.days[day]
             if info.text or info.red:
                 mark = "●" if info.red else " "
@@ -945,9 +971,34 @@ def label_span(layout):
     return max(zip(edges, edges[1:]), key=lambda span: span[1] - span[0])
 
 
-def sheets_latex(layout, page_count, pages_pdf, title, back_offset=0.0):
+def leaves_for(page_days, first, last):
+    """The page numbers to print for the days first to last: the pages with any of those days,
+    widened to whole leaves. A leaf is an odd (right-hand) page with the next even page on its
+    back, so printed two-sided they slide into the whole year's diary instead of the same leaves."""
+    hits = [number for number, days in enumerate(page_days, start=1) if any(first <= day <= last for day in days)]
+    start, end = hits[0], hits[-1]
+    start -= (start + 1) % 2                         # back to the odd page in front
+    end = min(end + end % 2, len(page_days))         # on to the even page behind
+    return list(range(start, end + 1))
+
+
+def pick_latex(pages_pdf, pages):
+    """A4 sheets with some of the A4 pages of pages_pdf, as they are: crop marks, the back side
+    offset and all. The first page must be odd, so fronts stay fronts."""
+    lines = ["\\documentclass{article}", "\\usepackage[a4paper,margin=0mm]{geometry}",
+             "\\usepackage{graphicx}", "\\usepackage{eso-pic}", "\\pagestyle{empty}", "\\begin{document}"]
+    for page in pages:
+        lines.append(f"\\AddToShipoutPictureBG*{{\\AtPageLowerLeft{{\\includegraphics[page={page}]{{{pages_pdf}}}}}}}")
+        lines.append("\\null\\newpage")
+    lines.append("\\end{document}")
+    return "\n".join(lines) + "\n"
+
+
+def sheets_latex(layout, page_count, pages_pdf, title, back_offset=0.0, pages=None):
     """A4 sheets with the pages of pages_pdf (one diary page per PDF page) laid out by
-    sheet_plan, with crop marks and pile letters on the fronts."""
+    sheet_plan, with crop marks and pile letters on the fronts. pages: the PDF page for each
+    page on the sheets, when they're only some of them (starting with an odd page)."""
+    pages = pages or list(range(1, page_count + 1))
     sides = sheet_plan(layout, page_count, back_offset)
     piles = PILES[:layout.per_side]
     block = block_box(layout)
@@ -974,7 +1025,7 @@ def sheets_latex(layout, page_count, pages_pdf, title, back_offset=0.0):
             left, bottom, right, top = place.box
             middle = (bottom + top) / 2
             items.append(f"\\put({mm((left + right) / 2)},{mm(middle)}){{\\makebox(0,0){{"
-                         f"\\includegraphics[page={place.page},angle={place.angle}]{{{pages_pdf}}}}}}}")
+                         f"\\includegraphics[page={pages[place.page - 1]},angle={place.angle}]{{{pages_pdf}}}}}}}")
             if front:
                 items.append(crop_marks(place.box))
                 on_right = layout.cols > 1 and place.slot % layout.cols == layout.cols - 1
@@ -994,7 +1045,7 @@ def sheets_latex(layout, page_count, pages_pdf, title, back_offset=0.0):
 
 def printing_instructions(layout, page_count):
     piles = PILES[:layout.per_side]
-    return (f"{sheet_count(layout, page_count)} sheets, {layout.per_side} pages on each side.\n"
+    return (f"{plural(sheet_count(layout, page_count), 'sheet')}, {layout.per_side} pages on each side.\n"
             "Print them two-sided, flipping on the long edge (the usual setting), at 100 % size.\n"
             f"Cut the whole pile along the crop marks, then stack the piles {', '.join(piles)} with A on top.")
 
@@ -1086,6 +1137,41 @@ def next_year():
     return date.today().year + 1
 
 
+# from= and to=: only the pages for some days. A date is 15 mars (or 15mars, 15. mars), a
+# month on its own (its first day after from, its last after to), or 2027-03-15.
+ISO_DATE = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})")
+DAY_MONTH = re.compile(r"(?:(\d{1,2})[.\s/-]*)?([^\W\d_]+)\.?")
+RANGE_WORD = re.compile(r"(from|to)=(.*)")
+
+
+def range_date(text, year, end=False, checking=False):
+    """The day text means in a year's diary. Raises ValueError saying what's wrong. checking:
+    only see that it can be a date (year is then a leap year, so 29 februari passes)."""
+    match = ISO_DATE.fullmatch(text)
+    if match:
+        try:
+            return date(*map(int, match.groups()))
+        except ValueError:
+            raise ValueError(f"there is no {text}") from None
+    match = DAY_MONTH.fullmatch(text)
+    month = MONTH_NUMBERS.get(match.group(2).casefold()) if match else None
+    if month is None:
+        raise ValueError(f"'{text}' isn't a date I know; write 15 mars, mars or {next_year()}-03-15")
+    if match.group(1) is None:  # the whole month
+        return date(year, month, calendar.monthrange(year, month)[1] if end else 1)
+    try:
+        return date(year, month, int(match.group(1)))
+    except ValueError:
+        raise ValueError(f"there is no {text}" + ("" if checking else f" in {year}")) from None
+
+
+def range_text(settings):
+    """'15 mars–30 april', 'from 15 mars', 'to 30 april', or '' for the whole year."""
+    if settings.start and settings.end:
+        return f"{settings.start}–{settings.end}"
+    return f"from {settings.start}" if settings.start else f"to {settings.end}" if settings.end else ""
+
+
 @dataclass
 class Settings:
     year: int = field(default_factory=next_year)
@@ -1098,6 +1184,8 @@ class Settings:
     tex_only: bool = False
     open_pdf: bool = True
     back_offset: float = DEFAULTS["back_offset"]  # mm, + moves the back of each sheet down
+    start: str = ""  # from= and to=, as written ("15 mars"); "" is the start or end of the year
+    end: str = ""
 
     @property
     def calendar(self):
@@ -1111,6 +1199,8 @@ class Settings:
             parts.append(f"{sheet.per_side} pages per sheet" if sheet else f"save-paper (doesn't fit {self.paper})")
         if self.back_offset:
             parts.append(f"back {signed_mm(self.back_offset)} mm")
+        if self.start or self.end:
+            parts.append(range_text(self))
         if self.calendar == "none":
             parts.append("no holidays")
         if self.tex_only:
@@ -1129,6 +1219,10 @@ class Settings:
             words.append("save-paper" if self.save_paper else "no-save-paper")
         if self.back_offset != usual.back_offset:
             words.append(f"back={signed_mm(self.back_offset)}")
+        if self.start:
+            words += ["from", *self.start.split()]
+        if self.end:
+            words += ["to", *self.end.split()]
         if self.holidays:
             words.append("holidays" if self.holidays == "se" else "no-holidays")
         if self.tex_only:
@@ -1178,6 +1272,8 @@ def setting_rows(s):
         ("Back side", f"{signed_mm(s.back_offset)} mm", back_meaning(s.back_offset)),
         ("Holidays", "on" if s.calendar == "se" else "off",
          "the Swedish calendar" if s.calendar == "se" else "only Sundays are red"),
+        ("Dates", range_text(s) or "whole year",
+         "only the leaves with those days, as in the whole year" if s.start or s.end else ""),
         ("Output", "tex-only" if s.tex_only else "pdf", "only the LaTeX file" if s.tex_only else "a typeset PDF"),
         ("Open PDF", "yes" if s.open_pdf else "no", "when it's done" if s.open_pdf else "leave it closed"),
     ]
@@ -1185,10 +1281,11 @@ def setting_rows(s):
 
 def settings_table(settings, before=None):
     """The settings, one per line, with what each one means. With before, only the lines that
-    changed. Output and Open PDF are left out while they're the usual pdf and yes."""
+    changed. Dates, Output and Open PDF are left out while they're the usual whole year, pdf
+    and yes."""
     rows = setting_rows(settings)
     if before is None:
-        rows = rows[:8] + [row for row in rows[8:] if row[1] not in ("pdf", "yes")]
+        rows = rows[:8] + [row for row in rows[8:] if row[1] not in ("whole year", "pdf", "yes")]
     else:
         rows = [row for row, old in zip(rows, setting_rows(before)) if row != old]
     width = max([10] + [len(value) + 2 for _, value, _ in rows])  # wider for a long layout name
@@ -1220,10 +1317,16 @@ CHOICES = {
     "year": "The year: four digits, like 2028. Without one you get next year's diary.",
     "back": "Back side: back=+1.0 moves the back of each sheet 1.0 mm down, for a printer that "
             "prints the back higher than the front; back=-0.5 moves it up, back=0 not at all.",
+    "dates": "Dates: from 15 mars to 30 april makes only the leaves with those days, each page "
+             "just as in the whole year's diary, to slide in instead of the old ones. A date is "
+             "15 mars, a month on its own (mars) or 2027-03-15; leave out from or to for the "
+             "start or end of the year. whole-year goes back to all of it.",
 }
 CHOICES["language"] = CHOICES["lang"]
+CHOICES["from"] = CHOICES["to"] = CHOICES["dates"]
+WHOLE_YEAR = "whole-year"
 
-ALL_WORDS = sorted(set(COMMANDS) | set(COMMAND_ALIASES) | set(SETTING_WORDS) | set(CHOICES))
+ALL_WORDS = sorted(set(COMMANDS) | set(COMMAND_ALIASES) | set(SETTING_WORDS) | set(CHOICES) | {WHOLE_YEAR})
 
 
 class WordError(Exception):
@@ -1248,17 +1351,45 @@ def unknown_word(given):
     return f"I don't know the word '{given}'. {hint}"
 
 
+def known_word(given):
+    """Whether a word means something on its own: a year, a command, a setting."""
+    word = given.lower().lstrip("-")
+    return ((word.isdigit() and len(word) == 4) or word in ALL_WORDS
+            or bool(BACK_WORD.fullmatch(word) or RANGE_WORD.fullmatch(word)))
+
+
 def parse_words(words, settings):
     """Apply words, in any order, to a copy of settings. Returns (the command or None, the
     new settings, the setting names given on their own). A word Alfie doesn't know raises
     WordError, with a suggestion, and nothing changes."""
     new = replace(settings)
     command, named = None, []
-    for given in words:
+    words = list(words)
+    while words:
+        given = words.pop(0)
         word = given.lower().lstrip("-")
         if not word:
             continue
-        if word.isdigit():
+        if word in ("from", "to") and words and not known_word(words[0]):
+            # "from 15 mars", "to april": the date is the next word, or the next two
+            # when the first is a day of the month
+            day = re.fullmatch(r"\d{1,2}\.?", words[0])
+            take = 2 if day and len(words) > 1 and not known_word(words[1]) else 1
+            word = f"{word}={' '.join(words[:take]).lower()}"
+            given = f"{given} {' '.join(words[:take])}"
+            del words[:take]
+        if RANGE_WORD.fullmatch(word):
+            name, text = RANGE_WORD.fullmatch(word).groups()
+            text = " ".join(text.split())
+            try:
+                if text:
+                    range_date(text, 2000, end=name == "to", checking=True)
+            except ValueError as error:
+                raise WordError(f"{given}: {error}.") from None
+            setattr(new, "start" if name == "from" else "end", text)
+        elif word == WHOLE_YEAR:
+            new.start = new.end = ""
+        elif word.isdigit():
             if len(word) != 4 or not 1583 <= int(word) <= 9998:
                 raise WordError(f"'{given}' isn't a year I can make: four digits, like {next_year()}.")
             new.year = int(word)
@@ -1289,6 +1420,7 @@ def help_text():
   {me} 2027                     the 2027 diary, with your usual settings
   {me} 2027 pocket save-paper   pocket size, four pages on each A4 sheet
   {me} list 2027                the red days and notes it will show
+  {me} 2027 from mars to april  only the leaves for those months, to slide into the diary
   {me}                          a shell, where you type the same words
 
 Commands     make (the default), list, settings, init, install, help
@@ -1299,6 +1431,7 @@ Language     {", ".join(LANGUAGES)}
 Colour       color, bw
 Save paper   save-paper, no-save-paper  (pocket: 4 pages per A4 sheet, personal and a6: 2)
 Back side    back=+1.0 moves the back of each sheet 1 mm down, back=-0.5 up (now {signed_mm(usual.back_offset)})
+Dates        from 15 mars to 30 april: only those leaves, just as in the whole year (dates on its own says more)
 Holidays     holidays, no-holidays  (the built-in Swedish calendar)
 Output       tex-only, pdf, no-open, open
 
@@ -1350,9 +1483,27 @@ def make_diary(settings, folder, list_only=False):
     files_text = ", ".join(notes.files) if notes.files else f"no dates file yet ({command_name()} init makes one)"
     using = f"Using {calendar_text} and {files_text}."
     diary = Diary(s.year, s.paper, s.color, s.layout, s.language, notes)
+    span = None
+    if s.start or s.end:
+        weeks = diary.weeks()
+        try:
+            span = (range_date(s.start, s.year) if s.start else weeks[0][0],
+                    range_date(s.end, s.year, end=True) if s.end else weeks[-1][-1])
+        except ValueError as error:
+            print(f"Dates: {error}.", file=sys.stderr)
+            return 1
+        outside = [day for day in span if not weeks[0][0] <= day <= weeks[-1][-1]]
+        if outside:
+            print(f"The {s.year} diary has the days from {diary.day_text(weeks[0][0])} to "
+                  f"{diary.day_text(weeks[-1][-1])}, and {diary.day_text(outside[0])} isn't one of them.",
+                  file=sys.stderr)
+            return 1
+        if span[0] > span[1]:
+            print(f"Dates: from {diary.day_text(span[0])} is after to {diary.day_text(span[1])}.", file=sys.stderr)
+            return 1
     if list_only:
         print(using)
-        diary.print_list()
+        diary.print_list(span)
         return 0
 
     sheet = sheet_layout(s.paper) if s.save_paper else None
@@ -1361,11 +1512,16 @@ def make_diary(settings, folder, list_only=False):
     if sheet and s.tex_only:
         print("Saving paper needs the typeset pages, so tex-only gives the usual one page per sheet.")
         sheet = None
+    if span and s.tex_only:
+        print("Picking out the pages for some dates needs the typeset diary, so tex-only gives the whole year.")
+        span = None
 
     per_sheet = f", {sheet.per_side} pages per A4 sheet" if sheet else ""
     colour = "colour" if s.color == "color" else "black and white"
     back = f", back side {signed_mm(s.back_offset)} mm" if s.back_offset else ""
-    print(f"Making the {s.year} diary: {s.paper}, {s.layout}, {LANGUAGE_NAMES[s.language]}, {colour}{per_sheet}{back}.")
+    dates = f", only {diary.day_text(span[0])} to {diary.day_text(span[1])}" if span else ""
+    print(f"Making the {s.year} diary: {s.paper}, {s.layout}, {LANGUAGE_NAMES[s.language]}, "
+          f"{colour}{per_sheet}{back}{dates}.")
     print(using)
     build = folder / BUILD_DIR
     build.mkdir(exist_ok=True)
@@ -1377,24 +1533,56 @@ def make_diary(settings, folder, list_only=False):
         return 0
 
     print("Typesetting with XeLaTeX ...")
-    if sheet:
-        page_count = run_xelatex(tex)
+    if sheet or span:
+        page_count = run_xelatex(tex)  # the whole year, then the sheets or the leaves picked from it
         if page_count is None:
             return 1
-        sheets_tex = build / f"{name}-{sheet.per_side}up.tex"
-        sheets_tex.write_text(sheets_latex(sheet, page_count, tex.with_suffix(".pdf").name,
-                                           f"Alfie {s.year}, {s.paper}", s.back_offset), encoding="utf-8")
-        tex = sheets_tex
+        pages = list(range(1, page_count + 1))
+        out = name
+        if span:
+            pages = picked_pages(diary, page_count, span)
+            if pages is None:
+                return 1
+            out = f"{name}-{span[0]:%m-%d}-to-{span[1]:%m-%d}"
+        if sheet:
+            out_tex = build / f"{out}-{sheet.per_side}up.tex"
+            title = f"Alfie {s.year}, {s.paper}" + (f", {range_text(s)}" if span else "")
+            out_tex.write_text(sheets_latex(sheet, len(pages), tex.with_suffix(".pdf").name, title,
+                                            s.back_offset, pages), encoding="utf-8")
+        else:
+            out_tex = build / f"{out}.tex"
+            out_tex.write_text(pick_latex(tex.with_suffix(".pdf").name, pages), encoding="utf-8")
+        tex = out_tex
     pdf = typeset(tex, folder)
     if pdf is None:
         return 1
     remove_build_files(build, name, keep=pdf)
     print(f"Done: {pdf.name}")
     if sheet:
-        print(printing_instructions(sheet, page_count))
+        print(printing_instructions(sheet, len(pages)))
+    elif span:
+        print("Print it two-sided, flipping on the long edge (the usual setting), at 100 % size.")
     if s.open_pdf and sys.platform == "darwin":
         subprocess.run(["open", str(pdf)], check=False)
     return 0
+
+
+def picked_pages(diary, page_count, span):
+    """The pages for the days in span, on whole leaves, after saying which they are and which
+    leaves of the whole diary they replace. None if the typeset diary isn't as expected."""
+    page_days = diary.page_days()
+    if page_count != len(page_days):
+        print(f"The diary came out with {page_count} pages, not the {len(page_days)} I expected, so I "
+              "can't tell which pages have which days. Make the whole year instead.", file=sys.stderr)
+        return None
+    pages = leaves_for(page_days, *span)
+    days = [day for page in pages for day in page_days[page - 1]]
+    first_leaf, last_leaf = (pages[0] + 1) // 2, (pages[-1] + 1) // 2
+    leaves = f"leaf {first_leaf}" if first_leaf == last_leaf else f"leaves {first_leaf}–{last_leaf}"
+    print(f"Pages {pages[0]}–{pages[-1]} of {page_count}, with {diary.day_text(min(days))} to "
+          f"{diary.day_text(max(days))}: whole leaves, so a few days more than you asked for.\n"
+          f"They replace {leaves} of the whole diary, counting the title page as leaf 1.")
+    return pages
 
 
 def run_command(command, settings, folder):
@@ -1468,6 +1656,8 @@ def shell_help(settings):
         f"  Back side   back=+1.0, back=0, back=-0.5 and so on: mm, + moves the back of each sheet down "
         f"(now {signed_mm(s.back_offset)})",
         f"  Holidays    {choices(['holidays', 'no-holidays'], 'holidays' if s.calendar == 'se' else 'no-holidays')}",
+        f"  Dates       from 15 mars, to 30 april, from mars, to 2027-04-30, whole-year "
+        f"(now {range_text(s) or 'the whole year'})",
         f"  Output      {choices(['pdf', 'tex-only'], 'tex-only' if s.tex_only else 'pdf')}",
         f"  Open PDF    {choices(['open', 'no-open'], 'open' if s.open_pdf else 'no-open')}",
         "",

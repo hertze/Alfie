@@ -9,6 +9,7 @@ Easter is checked against two other published algorithms for every Gregorian yea
 import contextlib
 import io
 import os
+import re
 import tempfile
 import unittest
 from datetime import date, timedelta
@@ -370,6 +371,80 @@ class ColumnLayoutTest(unittest.TestCase):
         self.assertLessEqual(alfie.COLUMN_LAYOUTS, set(alfie.LAYOUTS))
         for layout in set(alfie.LAYOUTS) - alfie.COLUMN_LAYOUTS:
             self.assertNotIn("\\AlfiePage", self.diary(layout).latex(), layout)
+
+
+class DateRangeTest(unittest.TestCase):
+    def parse(self, line):
+        return alfie.parse_words(line.split(), alfie.Settings(year=2027))[1]
+
+    def test_ways_of_writing_the_dates(self):
+        for line, start, end in [("from 15 mars to 30 april", "15 mars", "30 april"),
+                                 ("from=15mars to=april", "15mars", "april"),
+                                 ("from 15. mars pocket", "15. mars", ""),
+                                 ("to 2027-04-30 save-paper", "", "2027-04-30"),
+                                 ("from mars to april whole-year", "", "")]:
+            settings = self.parse(line)
+            self.assertEqual((settings.start, settings.end), (start, end), line)
+        self.assertEqual(self.parse("from 15 mars pocket").paper, "pocket")
+        settings = self.parse("from 15 mars to april")
+        self.assertEqual(alfie.parse_words(settings.words(), alfie.Settings())[1], settings)
+
+    def test_what_the_dates_mean(self):
+        self.assertEqual(alfie.range_date("mars", 2027), date(2027, 3, 1))
+        self.assertEqual(alfie.range_date("februari", 2028, end=True), date(2028, 2, 29))
+        self.assertEqual(alfie.range_date("15 march", 2027), date(2027, 3, 15))
+        self.assertEqual(alfie.range_date("2026-12-28", 2027), date(2026, 12, 28))
+        with self.assertRaises(ValueError):
+            alfie.range_date("29 feb", 2027)
+
+    def test_mistakes_are_explained(self):
+        for line, expected in [("from 31 april", "there is no 31 april"),
+                               ("to=banana", "isn't a date I know"),
+                               ("from 2027-02-30", "there is no 2027-02-30")]:
+            with self.assertRaises(alfie.WordError) as caught:
+                self.parse(line)
+            self.assertIn(expected, str(caught.exception))
+        self.assertEqual(alfie.parse_words(["from"], alfie.Settings())[2], ["from"])
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stderr(io.StringIO()) as errors:
+            for line in ("from 29 feb", "from april to mars", "to 2028-01-03"):
+                self.assertEqual(alfie.make_diary(self.parse(line), Path(folder), list_only=True), 1, line)
+        self.assertIn("2 januari 2028, and 3 januari 2028 isn't one of them", errors.getvalue())
+
+    def test_every_layout_says_which_days_are_on_its_pages(self):
+        self.assertEqual(set(alfie.WEEK_PAGES), set(alfie.LAYOUTS))
+        for layout in alfie.LAYOUTS:
+            diary = alfie.Diary(2027, "personal", "bw", layout, "sv", alfie.Notes({}, {}, []))
+            pages = diary.page_days()
+            self.assertEqual(pages[0], [])  # the title page
+            self.assertEqual({day for page in pages for day in page},
+                             {day for week in diary.weeks() for day in week}, layout)
+
+    def test_whole_leaves_with_every_page_for_the_days(self):
+        for layout in alfie.LAYOUTS:
+            page_days = alfie.Diary(2027, "pocket", "bw", layout, "sv", alfie.Notes({}, {}, [])).page_days()
+            days = sorted({day for page in page_days for day in page})
+            for first, last in [(days[0], days[0]), (days[0], days[20]), (days[100], days[101]),
+                                (days[200], days[300]), (days[-1], days[-1]), (days[0], days[-1])]:
+                pages = alfie.leaves_for(page_days, first, last)
+                self.assertEqual(pages, list(range(pages[0], pages[-1] + 1)))
+                self.assertEqual(pages[0] % 2, 1)  # starts with the front of a leaf
+                self.assertTrue(pages[-1] % 2 == 0 or pages[-1] == len(page_days))  # ends with its back
+                wanted = [n for n, on in enumerate(page_days, start=1) if any(first <= d <= last for d in on)]
+                self.assertTrue(set(wanted) <= set(pages))
+                self.assertLessEqual(len(pages), len(wanted) + 2)  # at most one more page at each end
+
+    def test_15_mars_to_30_april_in_the_usual_layout(self):
+        page_days = alfie.Diary(2027, "personal", "bw", "w2pwf", "sv", alfie.Notes({}, {}, [])).page_days()
+        pages = alfie.leaves_for(page_days, date(2027, 3, 15), date(2027, 4, 30))
+        self.assertEqual(pages, list(range(23, 39)))
+        self.assertEqual((page_days[22][0], page_days[37][-1]), (date(2027, 3, 11), date(2027, 5, 5)))
+
+    def test_the_picked_pages_go_on_the_sheets(self):
+        pages = list(range(23, 39))
+        sheets = alfie.sheets_latex(alfie.sheet_layout("pocket"), len(pages), "p.pdf", "t", 1.0, pages)
+        self.assertEqual(sorted(map(int, re.findall(r"\[page=(\d+),", sheets))), pages)
+        picked = alfie.pick_latex("p.pdf", pages)
+        self.assertEqual(list(map(int, re.findall(r"\[page=(\d+)\]", picked))), pages)
 
 
 class InstallTest(unittest.TestCase):

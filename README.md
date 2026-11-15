@@ -30,6 +30,7 @@ Alfie takes plain words, in any order:
     alfie 2027 pocket save-paper      four pocket pages on each A4 sheet
     alfie 2027 wg color               the four-page week layout, in colour
     alfie list 2027                   the red days and notes it will show
+    alfie 2027 from mars to april     only the leaves for March and April
     alfie help                        all the words
 
 | Words | What they do |
@@ -42,6 +43,7 @@ Alfie takes plain words, in any order:
 | `color`, `bw` | red days and notes in red, or all black |
 | `save-paper`, `no-save-paper` | several pages on each A4 sheet, see [Saving paper](#saving-paper) |
 | `back=+1.0`, `back=0`, `back=-0.5` | moves the back of each sheet, in mm, see [Printer adjustment](#printer-adjustment) |
+| `from 15 mars`, `to 30 april`, `whole-year` | only the leaves for some dates, see [Only some dates](#only-some-dates) |
 | `holidays`, `no-holidays` | the built-in Swedish calendar, on for Swedish diaries |
 | `tex-only`, `pdf` | only write the LaTeX file, or typeset it as usual |
 | `no-open`, `open` | whether to open the PDF afterwards |
@@ -147,6 +149,23 @@ The `wg` layout can print a text, such as a quote, on each week's gratitude page
 
     1: Two roads diverged in a wood, and I--I took the one less traveled by, And that has made all the difference. --- Robert Frost
     3: Your mind is for having ideas, not holding them. --- David Allen
+
+## Only some dates
+
+To print part of the year again, or to fix a few weeks in a diary you've already printed, give the dates:
+
+    alfie 2027 from 15 mars to 30 april
+    alfie 2027 from mars to april
+    alfie 2027 pocket save-paper from 2027-03-15 to 2027-04-30
+
+A date is a day and a month (`15 mars`, `15mars`, `15 march`), a month on its own (from its first day, or to its last), or a full date like `2027-03-15`, which is also how to reach the days of the neighbouring years at the start and end of the diary. Leave out `from` or `to` to start at the beginning of the year or go on to its end. In the shell the dates stay until you change them; `whole-year` goes back to all of it.
+
+Alfie makes the whole year as usual and keeps only the pages with those days, so every page is exactly as it is in the whole year's diary, on the same side and in the same place. It keeps whole leaves, since a leaf is printed on both sides: if the first day is on a left-hand page, the right-hand page before it comes too, and if the last day is on a right-hand page, so does the left-hand page on its back. That gives a few days more than you asked for. Alfie says which pages you get and which leaves of the whole diary they replace, counting the title page as leaf 1:
+
+    Pages 23–38 of 107, with 11 mars to 5 maj: whole leaves, so a few days more than you asked for.
+    They replace leaves 12–19 of the whole diary, counting the title page as leaf 1.
+
+It works with one page per sheet and with `save-paper`; the file is called like `diary-personal-2027-sv-03-15-to-04-30.pdf`. `list` with dates shows only the red days and notes for those days.
 
 ## Saving paper
 
